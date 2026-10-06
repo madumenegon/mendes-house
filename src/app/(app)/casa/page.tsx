@@ -30,8 +30,8 @@ export default async function CasaPage() {
       <div className="mb-5 grid grid-cols-2 gap-3 lg:grid-cols-4">
         <StatTile rotulo="Hoje" valor={`${deHoje.filter((o) => o.feita).length}/${deHoje.length}`} detalhe="tarefas feitas" icone="✅" cor="#16a34a" />
         <StatTile rotulo="Semana" valor={`${pct(feitasSemana, semana.length)}%`} detalhe={`${feitasSemana} de ${semana.length} concluídas`} icone="📅" cor="#0d9488" />
-        <StatTile rotulo="Carga — Madu" valor={horas(carga.madu)} detalhe="de tarefas nesta semana" icone="🌷" cor="#e0527e" />
-        <StatTile rotulo="Carga — Gabriel" valor={horas(carga.gabriel)} detalhe="de tarefas nesta semana" icone="🌊" cor="#3b7dd8" />
+        <StatTile rotulo="Carga — Madu" valor={horas(carga.madu)} detalhe="de tarefas nesta semana" icone="M" cor="#e0527e" />
+        <StatTile rotulo="Carga — Gabriel" valor={horas(carga.gabriel)} detalhe="de tarefas nesta semana" icone="G" cor="#3b7dd8" />
       </div>
       <TarefasCliente hoje={hoje} semana={semana} tarefas={todas} valores={valores} />
     </div>

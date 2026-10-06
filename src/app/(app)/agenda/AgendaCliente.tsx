@@ -23,9 +23,9 @@ const H_FIM = 24;
 const PX_H = 48;
 
 const DONOS: { valor: Dono; label: string; cor: string }[] = [
-  { valor: "madu", label: "🌷 Madu", cor: CORES.madu },
-  { valor: "gabriel", label: "🌊 Gabriel", cor: CORES.gabriel },
-  { valor: "compartilhado", label: "💞 Juntos", cor: CORES.compartilhado },
+  { valor: "madu", label: "Madu", cor: CORES.madu },
+  { valor: "gabriel", label: "Gabriel", cor: CORES.gabriel },
+  { valor: "compartilhado", label: "Juntos", cor: CORES.compartilhado },
 ];
 
 const REPETICOES: { valor: Recorrencia; label: string }[] = [

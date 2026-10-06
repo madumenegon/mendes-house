@@ -32,7 +32,7 @@ export default function EntrarPage() {
                     : "border-casa-line hover:bg-casa-bg"
                 )}
               >
-                <span className="text-3xl">{m === "madu" ? "🌷" : "🌊"}</span>
+                <span className={clsx("mx-auto flex h-11 w-11 items-center justify-center rounded-full text-lg font-bold text-white", m === "madu" ? "bg-madu" : "bg-gabriel")}>{m === "madu" ? "M" : "G"}</span>
                 <span className="mt-1 block font-bold">{m === "madu" ? "Madu" : "Gabriel"}</span>
               </button>
             ))}

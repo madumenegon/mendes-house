@@ -3,9 +3,9 @@ import type { ResumoTempo } from "@/lib/tempo";
 import type { MembroId } from "@/lib/types";
 import { Barra } from "@/components/ui";
 
-const INFO: Record<MembroId, { nome: string; cor: string; claro: string; emoji: string }> = {
-  madu: { nome: "Madu", cor: "#e0527e", claro: "#fde7ee", emoji: "🌷" },
-  gabriel: { nome: "Gabriel", cor: "#3b7dd8", claro: "#e3eefc", emoji: "🌊" },
+const INFO: Record<MembroId, { nome: string; cor: string; claro: string }> = {
+  madu: { nome: "Madu", cor: "#e0527e", claro: "#fde7ee" },
+  gabriel: { nome: "Gabriel", cor: "#3b7dd8", claro: "#e3eefc" },
 };
 
 /** Cards "Compromissos na semana — Madu / Gabriel". */
@@ -18,7 +18,7 @@ export function CompromissosPessoas({ resumo, periodo = "na semana" }: { resumo:
         return (
           <div key={m} className="card overflow-hidden p-4" style={{ background: `linear-gradient(135deg, ${i.claro}, #fff 70%)` }}>
             <p className="text-xs font-bold uppercase tracking-wide" style={{ color: i.cor }}>
-              {i.emoji} Compromissos {periodo} — {i.nome}
+              Compromissos {periodo} — {i.nome}
             </p>
             <p className="mt-1 font-display text-4xl font-semibold tabular-nums" style={{ color: i.cor }}>{p.compromissos}</p>
             <p className="text-xs text-casa-muted">
@@ -42,7 +42,7 @@ export function TempoDisponivel({ resumo, compacto }: { resumo: ResumoTempo; com
         return (
           <div key={m}>
             <div className="mb-1.5 flex items-baseline justify-between gap-2">
-              <span className="text-sm font-bold" style={{ color: i.cor }}>{i.emoji} {i.nome}</span>
+              <span className="text-sm font-bold" style={{ color: i.cor }}>{i.nome}</span>
               <span className="text-sm">
                 <b className="font-display text-lg tabular-nums">{horas(p.disponivel)}</b>
                 <span className="text-casa-muted"> livres ({100 - pct(usado, p.capacidade)}%)</span>

@@ -19,7 +19,7 @@ export default async function DespensaPage() {
       <Cabecalho titulo="Casa" subtitulo="O que temos em casa e o que está acabando." />
       <Abas itens={ABAS_CASA} ativo="/casa/despensa" />
       <div className="mb-5 grid grid-cols-3 gap-3">
-        <StatTile rotulo="Itens" valor={itens.length} icone="🥫" cor="#2f5d50" />
+        <StatTile rotulo="Itens" valor={itens.length} icone="🥫" cor="#b5573a" />
         <StatTile rotulo="Acabando" valor={acabando} icone="⚠️" cor="#d97706" />
         <StatTile rotulo="Acabou" valor={acabou} icone="🚫" cor="#dc2626" />
       </div>

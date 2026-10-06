@@ -10,7 +10,7 @@ export default function EntrarPage() {
   const [estado, acao, enviando] = useActionState(entrar, null);
 
   return (
-    <main className="flex min-h-screen items-center justify-center bg-[radial-gradient(circle_at_20%_10%,#fbe9df,transparent_45%),radial-gradient(circle_at_85%_90%,#e3efe9,transparent_45%)] p-4">
+    <main className="flex min-h-screen items-center justify-center bg-[radial-gradient(circle_at_20%_10%,#fbe6d3,transparent_45%),radial-gradient(circle_at_85%_90%,#f7ead0,transparent_45%)] p-4">
       <div className="card w-full max-w-sm p-7 text-center">
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img src="/icon.svg" alt="" className="mx-auto h-16 w-16" />

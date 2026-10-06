@@ -1,29 +1,30 @@
 @import "tailwindcss";
 
 @theme {
-  --color-casa-bg: #faf6f0;
+  --color-casa-bg: #faf4ec;
   --color-casa-card: #ffffff;
-  --color-casa-ink: #2a2622;
-  --color-casa-muted: #7a7068;
-  --color-casa-line: #ece4d9;
-  --color-casa-verde: #2f5d50;
-  --color-casa-verdeclaro: #e3efe9;
-  --color-casa-terra: #d9774b;
-  --color-casa-terraclaro: #fbe9df;
+  --color-casa-ink: #2b2420;
+  --color-casa-muted: #7d6f63;
+  --color-casa-line: #eee0cf;
+  --color-casa-principal: #b5573a;
+  --color-casa-principalclaro: #f6e3da;
+  --color-casa-destaque: #e9b44c;
+  --color-casa-destaqueescuro: #a26f12;
+  --color-casa-destaqueclaro: #fbf0d6;
   --color-madu: #e0527e;
   --color-maduclaro: #fde7ee;
   --color-gabriel: #3b7dd8;
   --color-gabrielclaro: #e3eefc;
-  --color-juntos: #8b5cf6;
-  --color-juntosclaro: #efe9fe;
+  --color-juntos: #9b6bd6;
+  --color-juntosclaro: #f1e8fb;
   --color-ok: #16a34a;
   --color-okclaro: #dcfce7;
   --color-alerta: #d97706;
   --color-alertaclaro: #fef3c7;
   --color-perigo: #dc2626;
   --color-perigoclaro: #fee2e2;
-  --font-sans: var(--font-nunito), ui-sans-serif, system-ui, sans-serif;
-  --font-display: var(--font-fraunces), Georgia, serif;
+  --font-sans: var(--font-montserrat), ui-sans-serif, system-ui, sans-serif;
+  --font-display: var(--font-montserrat), ui-sans-serif, system-ui, sans-serif;
 }
 
 body {
@@ -39,7 +40,7 @@ body {
   @apply inline-flex items-center justify-center gap-1.5 rounded-xl px-3.5 py-2 text-sm font-semibold transition active:scale-[0.98] disabled:opacity-50 disabled:pointer-events-none;
 }
 @utility btn-primario {
-  @apply btn bg-casa-verde text-white hover:bg-[#264d42];
+  @apply btn bg-casa-principal text-white hover:bg-[#9a4830];
 }
 @utility btn-secundario {
   @apply btn bg-white border border-casa-line text-casa-ink hover:bg-casa-bg;
@@ -52,12 +53,12 @@ body {
 }
 
 @utility campo {
-  @apply w-full rounded-xl border border-casa-line bg-white px-3 py-2 text-sm outline-none focus:border-casa-verde focus:ring-2 focus:ring-casa-verde/15;
+  @apply w-full rounded-xl border border-casa-line bg-white px-3 py-2 text-sm outline-none focus:border-casa-principal focus:ring-2 focus:ring-casa-principal/15;
 }
 @utility rotulo {
   @apply mb-1 block text-xs font-bold uppercase tracking-wide text-casa-muted;
 }
 
 @utility titulo-pagina {
-  @apply font-display text-2xl font-semibold text-casa-ink sm:text-3xl;
+  @apply font-display text-2xl font-bold tracking-tight text-casa-ink sm:text-3xl;
 }

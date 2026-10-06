@@ -55,7 +55,7 @@ export default async function FinancasPage({ searchParams }: PageProps<"/financa
           detalhe={<>Salários/rendas {moeda(salarios)} · Vales {moeda(r.valeRecebido)}</>} />
         <StatTile rotulo="Despesas" valor={moeda(r.despesas)} icone="🧾" cor="#e0527e"
           detalhe={<>{moeda(r.pago)} pagos · {moeda(r.aPagar)} a pagar</>} />
-        <StatTile rotulo="Saldo do mês" valor={moeda(r.saldo)} icone={r.saldo >= 0 ? "😊" : "😬"} cor={r.saldo >= 0 ? "#2f5d50" : "#dc2626"} destaque
+        <StatTile rotulo="Saldo do mês" valor={moeda(r.saldo)} icone={r.saldo >= 0 ? "😊" : "😬"} cor={r.saldo >= 0 ? "#b5573a" : "#dc2626"} destaque
           detalhe={r.receitas > 0 ? <>Gastamos {pct(r.despesas, r.receitas)}% do que entrou</> : "Lance as receitas do mês"} />
         <StatTile rotulo="Livre após caixinhas" valor={moeda(r.livre)} icone="🐷" cor="#0ea5e9"
           detalhe={<>Guardado no mês: {moeda(r.depositos - r.retiradas)}</>} />
@@ -67,7 +67,7 @@ export default async function FinancasPage({ searchParams }: PageProps<"/financa
         </Secao>
 
         <Secao titulo="Com o que mais gastamos" className="lg:col-span-2"
-          acao={<Link href={`/financas/orcamento?mes=${mes}`} className="text-xs font-bold text-casa-verde">Definir limites →</Link>}>
+          acao={<Link href={`/financas/orcamento?mes=${mes}`} className="text-xs font-bold text-casa-principal">Definir limites →</Link>}>
           {r.porCategoria.length === 0 ? (
             <Vazio icone="🧾">Nenhuma despesa lançada em {nomeMes(mes)}.</Vazio>
           ) : (
@@ -100,7 +100,7 @@ export default async function FinancasPage({ searchParams }: PageProps<"/financa
 
       <div className="mt-5 grid gap-5 lg:grid-cols-3">
         <Secao titulo={`Contas em aberto (${pendentes.length})`} className="lg:col-span-2"
-          acao={<Link href={`/financas/lancamentos?mes=${mes}`} className="text-xs font-bold text-casa-verde">Ver todos →</Link>}>
+          acao={<Link href={`/financas/lancamentos?mes=${mes}`} className="text-xs font-bold text-casa-principal">Ver todos →</Link>}>
           {pendentes.length === 0 ? (
             <Vazio icone="🎉">Tudo pago e recebido neste mês!</Vazio>
           ) : (
@@ -138,7 +138,7 @@ export default async function FinancasPage({ searchParams }: PageProps<"/financa
             <p className="mt-2 text-xs text-casa-muted">Lance gastos pagos com o vale usando a forma “Vale (VA/VR)”.</p>
           </Secao>
 
-          <Secao titulo="Caixinhas" acao={<Link href={`/financas/caixinhas?mes=${mes}`} className="text-xs font-bold text-casa-verde">Abrir →</Link>}>
+          <Secao titulo="Caixinhas" acao={<Link href={`/financas/caixinhas?mes=${mes}`} className="text-xs font-bold text-casa-principal">Abrir →</Link>}>
             <p className="mb-3 font-display text-2xl font-semibold">{moeda(totalGuardado)} <span className="font-sans text-xs font-semibold text-casa-muted">guardados</span></p>
             <ul className="space-y-2.5">
               {ativas.slice(0, 4).map((c) => {
@@ -160,7 +160,7 @@ export default async function FinancasPage({ searchParams }: PageProps<"/financa
           <EvolucaoMeses dados={evolucao} />
         </Secao>
         <Secao titulo="⏳ Orçamento de tempo da semana" className="lg:col-span-2"
-          acao={<Link href="/valores" className="text-xs font-bold text-casa-verde">Valores →</Link>}>
+          acao={<Link href="/valores" className="text-xs font-bold text-casa-principal">Valores →</Link>}>
           <p className="-mt-1 mb-3 text-xs text-casa-muted">Assim como o dinheiro, o tempo também se destina. Livre = horas acordados − compromissos − tarefas da casa.</p>
           <TempoDisponivel resumo={tempo.resumo} compacto />
           <div className="mt-4 border-t border-casa-line pt-3">

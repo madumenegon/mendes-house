@@ -50,7 +50,7 @@ export function OrcamentoCliente({
           {livre > 0 && <li className="flex items-center gap-1"><span className="h-2.5 w-2.5 rounded-full bg-black/10" />Livre {moeda(livre)}</li>}
         </ul>
         <p className="mt-3 text-xs text-casa-muted">
-          Defina um limite para cada categoria abaixo e um aporte mensal em cada <Link href={`/financas/caixinhas?mes=${mes}`} className="font-bold text-casa-verde underline">caixinha</Link>. Renda considerada: receitas lançadas em {nomeMes(mes)} (ou as entradas fixas, o que for maior).
+          Defina um limite para cada categoria abaixo e um aporte mensal em cada <Link href={`/financas/caixinhas?mes=${mes}`} className="font-bold text-casa-principal underline">caixinha</Link>. Renda considerada: receitas lançadas em {nomeMes(mes)} (ou as entradas fixas, o que for maior).
         </p>
       </Secao>
 

@@ -49,7 +49,7 @@ export function DespensaCliente({ itens, naLista }: { itens: ItemEstoque[]; naLi
         </div>
         <div className="flex rounded-xl bg-white p-0.5 ring-1 ring-casa-line">
           {(["todos", "baixo"] as const).map((f) => (
-            <button key={f} onClick={() => setFiltro(f)} className={clsx("rounded-lg px-3 py-1.5 text-xs font-bold", filtro === f ? "bg-casa-verde text-white" : "text-casa-muted")}>
+            <button key={f} onClick={() => setFiltro(f)} className={clsx("rounded-lg px-3 py-1.5 text-xs font-bold", filtro === f ? "bg-casa-principal text-white" : "text-casa-muted")}>
               {f === "todos" ? "Todos" : "Acabando"}
             </button>
           ))}
@@ -88,7 +88,7 @@ export function DespensaCliente({ itens, naLista }: { itens: ItemEstoque[]; naLi
                         <p className="flex flex-wrap items-center gap-1 text-xs text-casa-muted">
                           <span className="rounded-full px-1.5 py-0.5 text-[10px] font-bold" style={{ background: s.fundo, color: s.cor }}>{s.label}</span>
                           {i.local} · mín. {fmt(i.minimo)} {i.unidade}
-                          {listaSet.has(i.id) && <span className="text-casa-verde">· 🛒 na lista</span>}
+                          {listaSet.has(i.id) && <span className="text-casa-principal">· 🛒 na lista</span>}
                         </p>
                       </button>
                       <div className="flex items-center gap-1">

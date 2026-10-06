@@ -14,13 +14,13 @@ import {
 } from "./actions";
 
 const OPCOES_ESCOPO: { valor: Escopo; label: string; cor: string }[] = [
-  { valor: "familiar", label: "Familiar", cor: "#8b5cf6" },
+  { valor: "familiar", label: "Familiar", cor: "#9b6bd6" },
   { valor: "madu", label: "Madu", cor: "#e0527e" },
   { valor: "gabriel", label: "Gabriel", cor: "#3b7dd8" },
 ];
 
 const GRUPOS: { escopo: Escopo; titulo: string; cor: string }[] = [
-  { escopo: "familiar", titulo: "Valores da família", cor: "#8b5cf6" },
+  { escopo: "familiar", titulo: "Valores da família", cor: "#9b6bd6" },
   { escopo: "madu", titulo: "Valores da Madu", cor: "#e0527e" },
   { escopo: "gabriel", titulo: "Valores do Gabriel", cor: "#3b7dd8" },
 ];
@@ -68,9 +68,9 @@ function Missao({ familia }: { familia: FamiliaInfo }) {
   }
 
   return (
-    <div className="card relative overflow-hidden bg-[linear-gradient(135deg,#2f5d50,#3f7a69)] p-6 text-white sm:p-8">
+    <div className="card relative overflow-hidden bg-[linear-gradient(135deg,#b5573a,#d08155)] p-6 text-white sm:p-8">
       <div className="absolute -right-10 -top-10 h-44 w-44 rounded-full bg-white/10" />
-      <div className="absolute -bottom-16 right-24 h-36 w-36 rounded-full bg-casa-terra/30" />
+      <div className="absolute -bottom-16 right-24 h-36 w-36 rounded-full bg-casa-destaque/30" />
       <div className="relative">
         <div className="flex items-start justify-between gap-3">
           <p className="text-xs font-bold uppercase tracking-[0.2em] text-white/70">Nossa missão</p>
@@ -158,7 +158,7 @@ function ListaValores({ valores }: { valores: Valor[] }) {
 
 function FormValor({ valor, escopoInicial, onFechar }: { valor: Valor | null; escopoInicial: Escopo; onFechar: () => void }) {
   const [escopo, setEscopo] = useState<Escopo>(valor?.escopo ?? escopoInicial);
-  const [cor, setCor] = useState(valor?.cor ?? "#8b5cf6");
+  const [cor, setCor] = useState(valor?.cor ?? "#9b6bd6");
   const [emoji, setEmoji] = useState(valor?.emoji ?? "✨");
   const { pendente, erro, rodar } = useAcao();
 
@@ -231,7 +231,7 @@ function ListaPrioridades({ prioridades, valores }: { prioridades: Prioridade[];
             const v = p.valor_id ? valorMap.get(p.valor_id) : null;
             return (
               <li key={p.id} className={clsx("flex items-center gap-3 rounded-xl border border-casa-line p-2.5", p.concluida && "opacity-55")}>
-                <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-casa-terraclaro font-display font-semibold text-casa-terra">{i + 1}</span>
+                <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-casa-destaqueclaro font-display font-semibold text-casa-destaqueescuro">{i + 1}</span>
                 <button
                   onClick={() => rodar(() => alternarPrioridade(p.id, !p.concluida))}
                   className={clsx("flex h-6 w-6 shrink-0 items-center justify-center rounded-md border-2", p.concluida ? "border-ok bg-ok text-white" : "border-casa-line")}

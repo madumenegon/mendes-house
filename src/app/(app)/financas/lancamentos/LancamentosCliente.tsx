@@ -62,7 +62,7 @@ export function LancamentosCliente({
           {([
             ["todos", "Todos"], ["receita", "Receitas"], ["despesa", "Despesas"], ["aberto", "Em aberto"], ["fixo", "Fixos"], ["variavel", "Variáveis"],
           ] as [Filtro, string][]).map(([f, l]) => (
-            <button key={f} onClick={() => setFiltro(f)} className={clsx("rounded-full px-3 py-1 text-xs font-bold", filtro === f ? "bg-casa-verde text-white" : "bg-white text-casa-muted ring-1 ring-casa-line")}>{l}</button>
+            <button key={f} onClick={() => setFiltro(f)} className={clsx("rounded-full px-3 py-1 text-xs font-bold", filtro === f ? "bg-casa-principal text-white" : "bg-white text-casa-muted ring-1 ring-casa-line")}>{l}</button>
           ))}
         </div>
         <p className="text-sm">
@@ -182,7 +182,7 @@ function FormLancamento({
               key={c.id}
               onClick={() => escolherCategoria(c.id)}
               className="rounded-full border-2 px-2.5 py-1 text-xs font-bold"
-              style={categoriaId === c.id ? { borderColor: c.cor, background: `${c.cor}1c`, color: c.cor } : { borderColor: "#ece4d9", color: "#5c534c" }}
+              style={categoriaId === c.id ? { borderColor: c.cor, background: `${c.cor}1c`, color: c.cor } : { borderColor: "#eee0cf", color: "#5c534c" }}
             >
               {c.emoji} {c.nome}
             </button>
@@ -223,7 +223,7 @@ function FormLancamento({
       </div>
 
       <label className="flex items-center gap-2 text-sm font-semibold">
-        <input type="checkbox" name="pago" defaultChecked={l?.pago ?? false} className="h-4 w-4 accent-casa-verde" />
+        <input type="checkbox" name="pago" defaultChecked={l?.pago ?? false} className="h-4 w-4 accent-casa-principal" />
         {tipo === "receita" ? "Já recebemos" : "Já está pago"}
       </label>
 

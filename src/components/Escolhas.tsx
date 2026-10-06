@@ -42,7 +42,7 @@ export function SeletorEmoji({ valor, onChange, nome = "emoji" }: { valor: strin
             type="button"
             key={e}
             onClick={() => onChange(e)}
-            className={clsx("flex h-8 w-8 items-center justify-center rounded-lg text-lg transition hover:bg-casa-bg", valor === e && "bg-casa-verdeclaro ring-2 ring-casa-verde")}
+            className={clsx("flex h-8 w-8 items-center justify-center rounded-lg text-lg transition hover:bg-casa-bg", valor === e && "bg-casa-principalclaro ring-2 ring-casa-principal")}
           >
             {e}
           </button>
@@ -68,14 +68,14 @@ export function Segmentos<T extends string>({
       {nome && <input type="hidden" name={nome} value={valor} />}
       {opcoes.map((o) => {
         const ativo = o.valor === valor;
-        const cor = o.cor ?? "#2f5d50";
+        const cor = o.cor ?? "#b5573a";
         return (
           <button
             type="button"
             key={o.valor}
             onClick={() => onChange(o.valor)}
             className="rounded-xl border-2 px-3 py-1.5 text-sm font-bold transition"
-            style={ativo ? { borderColor: cor, background: `${cor}18`, color: cor } : { borderColor: "#ece4d9", color: "#7a7068" }}
+            style={ativo ? { borderColor: cor, background: `${cor}18`, color: cor } : { borderColor: "#eee0cf", color: "#7d6f63" }}
           >
             {o.label}
           </button>

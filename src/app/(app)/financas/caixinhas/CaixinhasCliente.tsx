@@ -23,7 +23,7 @@ export function CaixinhasCliente({
     <div className="space-y-4">
       <div className="flex justify-between gap-2">
         <label className="flex items-center gap-2 text-sm text-casa-muted">
-          <input type="checkbox" checked={verArquivadas} onChange={(e) => setVerArquivadas(e.target.checked)} className="accent-casa-verde" /> Mostrar arquivadas
+          <input type="checkbox" checked={verArquivadas} onChange={(e) => setVerArquivadas(e.target.checked)} className="accent-casa-principal" /> Mostrar arquivadas
         </label>
         <button className="btn-primario" onClick={() => setEditar("nova")}><Plus size={16} /> Nova caixinha</button>
       </div>
@@ -70,7 +70,7 @@ export function CaixinhasCliente({
                 <button className="flex items-center justify-center gap-1 py-2.5 text-sm font-bold text-ok hover:bg-okclaro/50" onClick={() => setMover({ c, tipo: "deposito" })}>
                   <ArrowDownCircle size={15} /> Guardar
                 </button>
-                <button className="flex items-center justify-center gap-1 border-x border-casa-line py-2.5 text-sm font-bold text-casa-terra hover:bg-casa-terraclaro/50" onClick={() => setMover({ c, tipo: "retirada" })}>
+                <button className="flex items-center justify-center gap-1 border-x border-casa-line py-2.5 text-sm font-bold text-casa-destaqueescuro hover:bg-casa-destaqueclaro/50" onClick={() => setMover({ c, tipo: "retirada" })}>
                   <ArrowUpCircle size={15} /> Resgatar
                 </button>
                 <button className="py-2.5 text-sm font-bold text-casa-muted hover:bg-casa-bg" onClick={() => setHistorico(c)}>Histórico</button>
@@ -100,12 +100,12 @@ function Historico({ movimentos }: { movimentos: MovimentoCaixinha[] }) {
     <ul className="divide-y divide-casa-line">
       {movimentos.map((m) => (
         <li key={m.id} className="flex items-center gap-3 py-2">
-          <span className={m.tipo === "deposito" ? "text-ok" : "text-casa-terra"}>{m.tipo === "deposito" ? <ArrowDownCircle size={18} /> : <ArrowUpCircle size={18} />}</span>
+          <span className={m.tipo === "deposito" ? "text-ok" : "text-casa-destaqueescuro"}>{m.tipo === "deposito" ? <ArrowDownCircle size={18} /> : <ArrowUpCircle size={18} />}</span>
           <div className="min-w-0 flex-1">
             <p className="text-sm font-semibold">{m.descricao || (m.tipo === "deposito" ? "Depósito" : "Resgate")}</p>
             <p className="text-xs text-casa-muted">{dataCurta(m.data)}/{m.data.slice(2, 4)} · por {m.created_by ? NOMES[m.created_by] : "—"}</p>
           </div>
-          <span className={`font-bold tabular-nums ${m.tipo === "deposito" ? "text-ok" : "text-casa-terra"}`}>{m.tipo === "deposito" ? "+" : "−"}{moeda(m.valor)}</span>
+          <span className={`font-bold tabular-nums ${m.tipo === "deposito" ? "text-ok" : "text-casa-destaqueescuro"}`}>{m.tipo === "deposito" ? "+" : "−"}{moeda(m.valor)}</span>
           <button className="btn-fantasma p-1" disabled={pendente} onClick={() => confirm("Apagar esta movimentação?") && rodar(() => excluirMovimento(m.id))}><X size={14} /></button>
         </li>
       ))}
@@ -165,7 +165,7 @@ function FormCaixinha({ caixinha, onFechar }: { caixinha: Caixinha | null; onFec
       <div><label className="rotulo">Cor</label><SeletorCor valor={cor} onChange={setCor} /></div>
       {caixinha && (
         <label className="flex items-center gap-2 text-sm font-semibold">
-          <input type="checkbox" name="arquivada" defaultChecked={caixinha.arquivada} className="accent-casa-verde" /> Arquivar (objetivo concluído)
+          <input type="checkbox" name="arquivada" defaultChecked={caixinha.arquivada} className="accent-casa-principal" /> Arquivar (objetivo concluído)
         </label>
       )}
       {erro && <p className="rounded-xl bg-perigoclaro px-3 py-2 text-sm text-perigo">{erro}</p>}

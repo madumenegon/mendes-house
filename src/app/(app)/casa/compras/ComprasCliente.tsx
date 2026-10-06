@@ -60,7 +60,7 @@ export function ComprasCliente({ itens, sugestoes }: { itens: ItemCompra[]; suge
         {itens.length === 0 ? (
           <Vazio icone="🛒">
             Lista vazia! Adicione itens acima ou envie da{" "}
-            <Link href="/casa/despensa" className="font-bold text-casa-verde underline">despensa</Link> o que está acabando.
+            <Link href="/casa/despensa" className="font-bold text-casa-principal underline">despensa</Link> o que está acabando.
           </Vazio>
         ) : (
           [...grupos.entries()].map(([cat, lista]) => (
@@ -71,7 +71,7 @@ export function ComprasCliente({ itens, sugestoes }: { itens: ItemCompra[]; suge
                   <li key={i.id} className="flex items-center gap-3 py-2">
                     <button
                       onClick={() => rodar(() => alternarComprado(i.id, !i.comprado))}
-                      className={clsx("flex h-7 w-7 shrink-0 items-center justify-center rounded-full border-2 transition", i.comprado ? "border-ok bg-ok text-white" : "border-casa-line hover:border-casa-verde")}
+                      className={clsx("flex h-7 w-7 shrink-0 items-center justify-center rounded-full border-2 transition", i.comprado ? "border-ok bg-ok text-white" : "border-casa-line hover:border-casa-principal")}
                     >
                       {i.comprado && <Check size={15} />}
                     </button>
@@ -116,7 +116,7 @@ export function ComprasCliente({ itens, sugestoes }: { itens: ItemCompra[]; suge
           {aviso && <p className="mt-3 rounded-xl bg-okclaro px-3 py-2 text-sm font-semibold text-ok">{aviso}</p>}
         </div>
         <div className="card p-4 text-sm text-casa-muted">
-          💡 Dica: lance o valor gasto no mercado em <Link href="/financas/lancamentos" className="font-bold text-casa-verde underline">Finanças</Link> na categoria Mercado (dá para pagar com o vale!).
+          💡 Dica: lance o valor gasto no mercado em <Link href="/financas/lancamentos" className="font-bold text-casa-principal underline">Finanças</Link> na categoria Mercado (dá para pagar com o vale!).
         </div>
       </aside>
     </div>

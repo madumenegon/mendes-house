@@ -58,7 +58,7 @@ export function TarefasCliente({ hoje, semana, tarefas, valores }: { hoje: strin
           <div className="space-y-4">
             {dias.map((d) => (
               <div key={d}>
-                <h3 className={clsx("mb-1.5 text-xs font-bold uppercase tracking-wide", d === hoje ? "text-casa-terra" : "text-casa-muted", d < hoje && "opacity-60")}>
+                <h3 className={clsx("mb-1.5 text-xs font-bold uppercase tracking-wide", d === hoje ? "text-casa-destaqueescuro" : "text-casa-muted", d < hoje && "opacity-60")}>
                   {d === hoje ? "Hoje · " : ""}{dataLonga(d)}
                 </h3>
                 <ul className="space-y-1">
@@ -170,7 +170,7 @@ function FormTarefa({ tarefa, hoje, valores, onFechar }: { tarefa: Tarefa | null
             {[1, 2, 3, 4, 5, 6, 0].map((d) => {
               const ativo = dias.includes(d);
               return (
-                <label key={d} className={clsx("cursor-pointer rounded-xl border-2 px-2.5 py-1.5 text-xs font-bold", ativo ? "border-casa-verde bg-casa-verdeclaro text-casa-verde" : "border-casa-line text-casa-muted")} title={DIAS_LONGOS[d]}>
+                <label key={d} className={clsx("cursor-pointer rounded-xl border-2 px-2.5 py-1.5 text-xs font-bold", ativo ? "border-casa-principal bg-casa-principalclaro text-casa-principal" : "border-casa-line text-casa-muted")} title={DIAS_LONGOS[d]}>
                   <input
                     type="checkbox" name="dias_semana" value={d} checked={ativo} className="sr-only"
                     onChange={() => setDias((x) => (ativo ? x.filter((y) => y !== d) : [...x, d]))}

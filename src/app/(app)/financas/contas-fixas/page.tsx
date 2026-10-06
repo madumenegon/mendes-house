@@ -17,7 +17,7 @@ export default async function ContasFixasPage({ searchParams }: PageProps<"/fina
       <div className="mb-5 grid gap-3 sm:grid-cols-3">
         <StatTile rotulo="Entradas fixas" valor={moeda(entradas)} icone="💼" cor="#16a34a" />
         <StatTile rotulo="Custo fixo mensal" valor={moeda(saidas)} icone="📌" cor="#6366f1" />
-        <StatTile rotulo="Sobra prevista" valor={moeda(entradas - saidas)} icone="✨" cor={entradas - saidas >= 0 ? "#2f5d50" : "#dc2626"} detalhe="antes dos gastos variáveis" />
+        <StatTile rotulo="Sobra prevista" valor={moeda(entradas - saidas)} icone="✨" cor={entradas - saidas >= 0 ? "#b5573a" : "#dc2626"} detalhe="antes dos gastos variáveis" />
       </div>
       <ContasFixasCliente contas={contas} categorias={categorias} mes={mes} />
     </div>

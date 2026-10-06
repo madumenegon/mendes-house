@@ -35,7 +35,7 @@ export function Nav({ membro }: { membro: MembroId }) {
               href={href}
               className={clsx(
                 "flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-semibold transition",
-                ativo(href) ? "bg-casa-verde text-white shadow-sm" : "text-casa-muted hover:bg-casa-bg hover:text-casa-ink"
+                ativo(href) ? "bg-casa-principal text-white shadow-sm" : "text-casa-muted hover:bg-casa-bg hover:text-casa-ink"
               )}
             >
               <Icon size={18} />
@@ -72,9 +72,9 @@ export function Nav({ membro }: { membro: MembroId }) {
           <Link
             key={href}
             href={href}
-            className={clsx("flex flex-col items-center gap-0.5 py-2 text-[11px] font-bold", ativo(href) ? "text-casa-verde" : "text-casa-muted")}
+            className={clsx("flex flex-col items-center gap-0.5 py-2 text-[11px] font-bold", ativo(href) ? "text-casa-principal" : "text-casa-muted")}
           >
-            <span className={clsx("rounded-full px-3 py-1", ativo(href) && "bg-casa-verdeclaro")}><Icon size={19} /></span>
+            <span className={clsx("rounded-full px-3 py-1", ativo(href) && "bg-casa-principalclaro")}><Icon size={19} /></span>
             {label}
           </Link>
         ))}

@@ -20,7 +20,7 @@ export default async function CaixinhasPage({ searchParams }: PageProps<"/financ
       <div className="mb-5 grid gap-3 sm:grid-cols-3">
         <StatTile rotulo="Total guardado" valor={moeda(total)} icone="🐷" cor="#10b981" destaque />
         <StatTile rotulo="Soma das metas" valor={moeda(metas)} icone="🎯" cor="#0ea5e9" detalhe={metas ? `${Math.round((total / metas) * 100)}% alcançado` : undefined} />
-        <StatTile rotulo="Aporte planejado" valor={moeda(aportes)} icone="📅" cor="#8b5cf6" detalhe="por mês" />
+        <StatTile rotulo="Aporte planejado" valor={moeda(aportes)} icone="📅" cor="#9b6bd6" detalhe="por mês" />
       </div>
       <CaixinhasCliente caixinhas={caixinhas} movimentos={movimentos} saldos={saldos} hoje={hojeISO()} />
     </div>

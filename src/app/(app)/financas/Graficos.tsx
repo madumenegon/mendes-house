@@ -3,7 +3,7 @@
 import { Bar, BarChart, CartesianGrid, Cell, Legend, Pie, PieChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 import { moeda, moedaCurta, pct } from "@/lib/format";
 
-const tooltipEstilo = { borderRadius: 12, border: "1px solid #ece4d9", fontSize: 12 };
+const tooltipEstilo = { borderRadius: 12, border: "1px solid #eee0cf", fontSize: 12 };
 
 export function DonutFixoVariavel({ fixo, variavel }: { fixo: number; variavel: number }) {
   const total = fixo + variavel;
@@ -47,9 +47,9 @@ export function EvolucaoMeses({ dados }: { dados: { mes: string; receitas: numbe
     <div className="h-64">
       <ResponsiveContainer width="100%" height="100%">
         <BarChart data={dados} barGap={2} margin={{ left: -8, right: 4, top: 8 }}>
-          <CartesianGrid vertical={false} stroke="#ece4d9" />
-          <XAxis dataKey="mes" tickLine={false} axisLine={false} tick={{ fontSize: 11, fill: "#7a7068" }} />
-          <YAxis tickLine={false} axisLine={false} tick={{ fontSize: 11, fill: "#7a7068" }} tickFormatter={(v) => (v >= 1000 ? `${Math.round(v / 1000)}k` : String(v))} />
+          <CartesianGrid vertical={false} stroke="#eee0cf" />
+          <XAxis dataKey="mes" tickLine={false} axisLine={false} tick={{ fontSize: 11, fill: "#7d6f63" }} />
+          <YAxis tickLine={false} axisLine={false} tick={{ fontSize: 11, fill: "#7d6f63" }} tickFormatter={(v) => (v >= 1000 ? `${Math.round(v / 1000)}k` : String(v))} />
           <Tooltip formatter={(v) => moeda(Number(v))} contentStyle={tooltipEstilo} cursor={{ fill: "rgba(0,0,0,0.04)" }} />
           <Legend iconType="circle" iconSize={9} wrapperStyle={{ fontSize: 12 }} />
           <Bar dataKey="receitas" name="Receitas" fill="#16a34a" radius={[4, 4, 0, 0]} maxBarSize={22} />

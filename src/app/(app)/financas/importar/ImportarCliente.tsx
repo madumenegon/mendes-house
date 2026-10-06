@@ -92,17 +92,17 @@ export function ImportarCliente({ categorias, historico, temIA }: { categorias: 
     <div className="space-y-4">
       <label
         className={clsx(
-          "card flex cursor-pointer flex-col items-center justify-center gap-2 border-2 border-dashed p-8 text-center transition hover:border-casa-verde hover:bg-casa-verdeclaro/30",
+          "card flex cursor-pointer flex-col items-center justify-center gap-2 border-2 border-dashed p-8 text-center transition hover:border-casa-principal hover:bg-casa-principalclaro/30",
           lendo && "pointer-events-none opacity-70"
         )}
         onDragOver={(e) => e.preventDefault()}
         onDrop={(e) => { e.preventDefault(); const f = e.dataTransfer.files[0]; if (f) enviar(f); }}
       >
         <input type="file" accept="application/pdf" className="sr-only" onChange={(e) => { const f = e.target.files?.[0]; if (f) enviar(f); e.target.value = ""; }} />
-        {lendo ? <Loader2 className="animate-spin text-casa-verde" size={36} /> : <FileUp className="text-casa-verde" size={36} />}
+        {lendo ? <Loader2 className="animate-spin text-casa-principal" size={36} /> : <FileUp className="text-casa-principal" size={36} />}
         <p className="font-display text-lg font-semibold">{lendo ? "Lendo o extrato…" : "Clique ou arraste o PDF do extrato / fatura"}</p>
         <p className="flex items-center gap-1 text-xs text-casa-muted">
-          {temIA ? <><Sparkles size={13} className="text-casa-terra" /> Leitura inteligente ativada — funciona com qualquer banco.</> : "Leitura simples (extratos em texto). Para qualquer banco, configure a chave da IA."}
+          {temIA ? <><Sparkles size={13} className="text-casa-destaqueescuro" /> Leitura inteligente ativada — funciona com qualquer banco.</> : "Leitura simples (extratos em texto). Para qualquer banco, configure a chave da IA."}
         </p>
       </label>
 
@@ -135,7 +135,7 @@ export function ImportarCliente({ categorias, historico, temIA }: { categorias: 
             <table className="w-full min-w-[760px] text-sm">
               <thead className="bg-casa-bg/70 text-left text-[11px] uppercase tracking-wide text-casa-muted">
                 <tr>
-                  <th className="p-2 pl-4"><input type="checkbox" className="accent-casa-verde" checked={selecionadas.length === linhas.length} onChange={(e) => aplicarATodas({ incluir: e.target.checked })} /></th>
+                  <th className="p-2 pl-4"><input type="checkbox" className="accent-casa-principal" checked={selecionadas.length === linhas.length} onChange={(e) => aplicarATodas({ incluir: e.target.checked })} /></th>
                   <th className="p-2">Data</th>
                   <th className="p-2">Descrição</th>
                   <th className="p-2 text-right">Valor</th>
@@ -147,10 +147,10 @@ export function ImportarCliente({ categorias, historico, temIA }: { categorias: 
               <tbody className="divide-y divide-casa-line">
                 {linhas.map((l, i) => (
                   <tr key={i} className={clsx(!l.incluir && "opacity-45")}>
-                    <td className="p-2 pl-4"><input type="checkbox" className="accent-casa-verde" checked={l.incluir} onChange={(e) => atualizar(i, { incluir: e.target.checked })} /></td>
+                    <td className="p-2 pl-4"><input type="checkbox" className="accent-casa-principal" checked={l.incluir} onChange={(e) => atualizar(i, { incluir: e.target.checked })} /></td>
                     <td className="whitespace-nowrap p-2 tabular-nums">{dataCurta(l.data)}</td>
                     <td className="p-2">
-                      <input value={l.descricao} onChange={(e) => atualizar(i, { descricao: e.target.value })} className="w-full min-w-48 rounded-lg border border-transparent px-1.5 py-1 hover:border-casa-line focus:border-casa-verde focus:outline-none" />
+                      <input value={l.descricao} onChange={(e) => atualizar(i, { descricao: e.target.value })} className="w-full min-w-48 rounded-lg border border-transparent px-1.5 py-1 hover:border-casa-line focus:border-casa-principal focus:outline-none" />
                       {l.duplicada && <span className="ml-1.5 rounded bg-alertaclaro px-1.5 text-[10px] font-bold text-alerta">já lançado?</span>}
                     </td>
                     <td className={clsx("whitespace-nowrap p-2 text-right font-bold tabular-nums", l.tipo === "receita" ? "text-ok" : "")}>

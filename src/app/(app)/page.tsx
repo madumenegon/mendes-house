@@ -45,7 +45,7 @@ export default async function InicioPage() {
 
   return (
     <div className="space-y-5">
-      <div className="card relative overflow-hidden bg-[linear-gradient(120deg,#fbe9df,#fff_55%,#e3efe9)] p-5 sm:p-6">
+      <div className="card relative overflow-hidden bg-[linear-gradient(120deg,#fbe6d3,#fff_55%,#f7ead0)] p-5 sm:p-6">
         <p className="text-sm font-semibold text-casa-muted">{dataLonga(hoje)}</p>
         <h1 className="mt-1 font-display text-3xl font-semibold sm:text-4xl">
           {saudacao}, <span style={{ color: CORES[membro] }}>{membro === "madu" ? "Madu" : "Gabriel"}</span>!
@@ -58,7 +58,7 @@ export default async function InicioPage() {
       <CompromissosPessoas resumo={resumo} />
 
       <div className="grid gap-5 lg:grid-cols-3">
-        <Secao titulo="📅 Hoje na agenda" className="lg:col-span-2" acao={<Link href="/agenda" className="text-xs font-bold text-casa-verde">Agenda →</Link>}>
+        <Secao titulo="📅 Hoje na agenda" className="lg:col-span-2" acao={<Link href="/agenda" className="text-xs font-bold text-casa-principal">Agenda →</Link>}>
           {doDia.length === 0 ? (
             <Vazio icone="🌤️">Nenhum compromisso hoje.</Vazio>
           ) : (
@@ -88,7 +88,7 @@ export default async function InicioPage() {
           )}
         </Secao>
 
-        <Secao titulo="🧹 Tarefas de hoje" acao={<Link href="/casa" className="text-xs font-bold text-casa-verde">Casa →</Link>}>
+        <Secao titulo="🧹 Tarefas de hoje" acao={<Link href="/casa" className="text-xs font-bold text-casa-principal">Casa →</Link>}>
           {tarefasHoje.length === 0 ? <Vazio icone="😌">Nenhuma tarefa para hoje.</Vazio> : (
             <ul className="space-y-1">{tarefasHoje.map((o) => <ItemChecklist key={o.tarefa.id} o={o} />)}</ul>
           )}
@@ -96,14 +96,14 @@ export default async function InicioPage() {
       </div>
 
       <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
-        <StatTile rotulo="Saldo do mês" valor={moeda(r.saldo)} icone="💰" cor={r.saldo >= 0 ? "#2f5d50" : "#dc2626"} destaque />
+        <StatTile rotulo="Saldo do mês" valor={moeda(r.saldo)} icone="💰" cor={r.saldo >= 0 ? "#b5573a" : "#dc2626"} destaque />
         <StatTile rotulo="A pagar no mês" valor={moeda(r.aPagar)} icone="🧾" cor="#e0527e" detalhe={`${moeda(r.pago)} já pagos`} />
         <StatTile rotulo="Lista de compras" valor={`${naLista ?? 0} itens`} icone="🛒" cor="#0d9488" detalhe={<Link href="/casa/compras" className="font-bold underline">abrir lista</Link>} />
         <StatTile rotulo="Acabando em casa" valor={acabando.length} icone="🥫" cor="#d97706" detalhe={<Link href="/casa/despensa" className="font-bold underline">ver despensa</Link>} />
       </div>
 
       <div className="grid gap-5 lg:grid-cols-2">
-        <Secao titulo="⏰ Contas dos próximos 7 dias" acao={<Link href="/financas" className="text-xs font-bold text-casa-verde">Finanças →</Link>}>
+        <Secao titulo="⏰ Contas dos próximos 7 dias" acao={<Link href="/financas" className="text-xs font-bold text-casa-principal">Finanças →</Link>}>
           {vencendo.length === 0 ? <Vazio icone="🎉">Nenhuma conta vencendo.</Vazio> : (
             <ul className="divide-y divide-casa-line">
               {vencendo.slice(0, 6).map((l) => (

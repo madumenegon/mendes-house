@@ -18,7 +18,7 @@ export function DonoBadge({ dono, pequeno }: { dono: Dono | Pessoa | Responsavel
 }
 
 export function StatTile({
-  rotulo, valor, detalhe, icone, cor = "#2f5d50", destaque,
+  rotulo, valor, detalhe, icone, cor = "#b5573a", destaque,
 }: { rotulo: string; valor: ReactNode; detalhe?: ReactNode; icone?: ReactNode; cor?: string; destaque?: boolean }) {
   return (
     <div className={clsx("card relative min-w-0 overflow-hidden p-4", destaque && "text-white")} style={destaque ? { background: cor, borderColor: cor } : undefined}>
@@ -79,7 +79,7 @@ export function Abas({ itens, ativo, query = "" }: { itens: { href: string; labe
             href={i.href + query}
             className={clsx(
               "whitespace-nowrap rounded-xl px-3.5 py-1.5 text-sm font-semibold transition",
-              ativo === i.href ? "bg-casa-verde text-white" : "text-casa-muted hover:text-casa-ink"
+              ativo === i.href ? "bg-casa-principal text-white" : "text-casa-muted hover:text-casa-ink"
             )}
           >
             {i.label}

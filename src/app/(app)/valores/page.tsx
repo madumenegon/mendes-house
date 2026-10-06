@@ -38,7 +38,7 @@ export default async function ValoresPage({ searchParams }: PageProps<"/valores"
             <Link
               key={p}
               href={`/valores?periodo=${p}`}
-              className={clsx("rounded-xl px-3 py-1.5 text-sm font-semibold", periodo === p ? "bg-casa-verde text-white" : "text-casa-muted")}
+              className={clsx("rounded-xl px-3 py-1.5 text-sm font-semibold", periodo === p ? "bg-casa-principal text-white" : "text-casa-muted")}
             >
               {p === "semana" ? "Esta semana" : "Este mês"}
             </Link>

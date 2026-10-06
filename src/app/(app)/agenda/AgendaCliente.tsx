@@ -100,7 +100,7 @@ export function AgendaCliente(p: Props) {
                 key={d.valor}
                 onClick={() => setFiltro((f) => ({ ...f, [d.valor]: !f[d.valor] }))}
                 className="rounded-full border px-2.5 py-1 text-xs font-bold transition"
-                style={filtro[d.valor] ? { background: `${d.cor}18`, borderColor: d.cor, color: d.cor } : { borderColor: "#ece4d9", color: "#b3a99f", textDecoration: "line-through" }}
+                style={filtro[d.valor] ? { background: `${d.cor}18`, borderColor: d.cor, color: d.cor } : { borderColor: "#eee0cf", color: "#b3a99f", textDecoration: "line-through" }}
               >
                 {d.label}
               </button>
@@ -186,7 +186,7 @@ function VisaoSemana({
           {dias.map((d) => (
             <button key={d} onClick={() => onNovo(d)} className="py-2 text-center hover:bg-casa-bg">
               <p className="text-[11px] font-bold uppercase text-casa-muted">{DIAS_CURTOS[diaDaSemana(d)]}</p>
-              <p className={clsx("mx-auto mt-0.5 flex h-8 w-8 items-center justify-center rounded-full font-display text-lg font-semibold", d === hoje && "bg-casa-terra text-white")}>
+              <p className={clsx("mx-auto mt-0.5 flex h-8 w-8 items-center justify-center rounded-full font-display text-lg font-semibold", d === hoje && "bg-casa-destaque text-casa-ink")}>
                 {Number(d.slice(8))}
               </p>
             </button>
@@ -221,12 +221,12 @@ function VisaoSemana({
             const blocos = organizar(ocs.filter((o) => o.data === d && !o.evento.dia_inteiro && o.evento.hora_inicio));
             const tarefasHora = tfs.filter((t) => t.data === d && t.tarefa.hora);
             return (
-              <div key={d} className={clsx("relative border-l border-casa-line", d === hoje && "bg-casa-terraclaro/30")}>
+              <div key={d} className={clsx("relative border-l border-casa-line", d === hoje && "bg-casa-destaqueclaro/30")}>
                 {horasGrade.map((h) => (
                   <button
                     key={h}
                     onClick={() => onNovo(d, `${String(h).padStart(2, "0")}:00`)}
-                    className="absolute inset-x-0 border-t border-casa-line/70 hover:bg-casa-verdeclaro/40"
+                    className="absolute inset-x-0 border-t border-casa-line/70 hover:bg-casa-principalclaro/40"
                     style={{ top: (h - H_INI) * PX_H, height: PX_H }}
                     aria-label={`Novo às ${h}h`}
                   />
@@ -364,7 +364,7 @@ function VisaoMes({
                 <Link
                   href={hrefDia(d)}
                   onClick={(e) => e.stopPropagation()}
-                  className={clsx("flex h-6 w-6 items-center justify-center rounded-full text-xs font-bold hover:bg-casa-line", d === hoje && "bg-casa-terra text-white hover:bg-casa-terra")}
+                  className={clsx("flex h-6 w-6 items-center justify-center rounded-full text-xs font-bold hover:bg-casa-line", d === hoje && "bg-casa-destaque text-casa-ink hover:bg-casa-destaque")}
                 >
                   {Number(d.slice(8))}
                 </Link>
@@ -395,7 +395,7 @@ function VisaoLista({
     <div className="space-y-3">
       {comItens.map((d) => (
         <section key={d} className="card p-3 sm:p-4">
-          <h3 className={clsx("mb-2 text-sm font-bold", d === hoje ? "text-casa-terra" : "text-casa-muted")}>
+          <h3 className={clsx("mb-2 text-sm font-bold", d === hoje ? "text-casa-destaqueescuro" : "text-casa-muted")}>
             {d === hoje ? "Hoje · " : ""}{dataLonga(d)}
           </h3>
           <ul className="space-y-1.5">
@@ -480,7 +480,7 @@ function FormEvento({ edicao, membro, valores, onFechar }: { edicao: Edicao; mem
               key={v.id}
               onClick={() => setValorId(v.id)}
               className="flex items-center gap-1 rounded-full border-2 px-2.5 py-1 text-xs font-bold transition"
-              style={valorId === v.id ? { borderColor: v.cor, background: `${v.cor}1c`, color: v.cor } : { borderColor: "#ece4d9", color: "#5c534c" }}
+              style={valorId === v.id ? { borderColor: v.cor, background: `${v.cor}1c`, color: v.cor } : { borderColor: "#eee0cf", color: "#5c534c" }}
               title={v.escopo === "familiar" ? "Valor familiar" : `Valor de ${NOMES[v.escopo]}`}
             >
               {v.emoji} {v.nome}
@@ -497,7 +497,7 @@ function FormEvento({ edicao, membro, valores, onFechar }: { edicao: Edicao; mem
           <input type="date" name="data" defaultValue={ev?.data ?? edicao.data} className="campo" required />
         </div>
         <label className="col-span-2 flex items-center gap-2 self-end pb-2 text-sm font-semibold sm:col-span-1">
-          <input type="checkbox" name="dia_inteiro" checked={diaInteiro} onChange={(e) => setDiaInteiro(e.target.checked)} className="h-4 w-4 accent-casa-verde" />
+          <input type="checkbox" name="dia_inteiro" checked={diaInteiro} onChange={(e) => setDiaInteiro(e.target.checked)} className="h-4 w-4 accent-casa-principal" />
           Dia inteiro
         </label>
         {!diaInteiro && (

@@ -14,7 +14,7 @@ export function GraficoValores({ dados }: { dados: { nome: string; minutos: numb
             <Pie data={dados} dataKey="minutos" nameKey="nome" innerRadius="62%" outerRadius="92%" paddingAngle={2} stroke="#fff" strokeWidth={2} cornerRadius={4}>
               {dados.map((d) => <Cell key={d.nome} fill={d.cor} />)}
             </Pie>
-            <Tooltip formatter={(v) => horas(Number(v))} contentStyle={{ borderRadius: 12, border: "1px solid #ece4d9" }} />
+            <Tooltip formatter={(v) => horas(Number(v))} contentStyle={{ borderRadius: 12, border: "1px solid #eee0cf" }} />
           </PieChart>
         </ResponsiveContainer>
         <div className="pointer-events-none absolute inset-0 flex flex-col items-center justify-center">

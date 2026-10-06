@@ -25,8 +25,8 @@ Next.js 16 + Supabase (Postgres) + Netlify — mesmo padrão dos apps da Zōsa.
 
 ## Acesso
 
-Sem senha: cada um entra só tocando no seu nome (Madu ou Gabriel). O site
-fica fora dos buscadores (robots noindex). O cookie é assinado com
+Sem contas de e-mail: cada um entra escolhendo seu nome + **sua senha**
+(`APP_SENHA_MADU` / `APP_SENHA_GABRIEL`). O cookie é assinado com
 `APP_SESSION_SECRET`. Tudo o que é criado guarda quem criou/alterou.
 
 ## Configuração

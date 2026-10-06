@@ -21,6 +21,15 @@ export function criarToken(membro: MembroId) {
   return `${membro}.${assinar(membro)}`;
 }
 
+/** Senha individual de cada um (APP_SENHA_MADU / APP_SENHA_GABRIEL). */
+export function senhaConfere(membro: MembroId, senha: string) {
+  const esperada = membro === "madu" ? process.env.APP_SENHA_MADU : process.env.APP_SENHA_GABRIEL;
+  if (!esperada) return false;
+  const a = Buffer.from(senha);
+  const b = Buffer.from(esperada);
+  return a.length === b.length && timingSafeEqual(a, b);
+}
+
 /** Quem está logado (cookie assinado), ou null. */
 export async function membroAtual(): Promise<MembroId | null> {
   const token = (await cookies()).get(COOKIE_SESSAO)?.value;

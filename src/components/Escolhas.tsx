@@ -68,14 +68,14 @@ export function Segmentos<T extends string>({
       {nome && <input type="hidden" name={nome} value={valor} />}
       {opcoes.map((o) => {
         const ativo = o.valor === valor;
-        const cor = o.cor ?? "#b5573a";
+        const cor = o.cor ?? "#e0601a";
         return (
           <button
             type="button"
             key={o.valor}
             onClick={() => onChange(o.valor)}
             className="rounded-xl border-2 px-3 py-1.5 text-sm font-bold transition"
-            style={ativo ? { borderColor: cor, background: `${cor}18`, color: cor } : { borderColor: "#eee0cf", color: "#7d6f63" }}
+            style={ativo ? { borderColor: cor, background: `${cor}18`, color: cor } : { borderColor: "#f0e2c4", color: "#8a6e62" }}
           >
             {o.label}
           </button>

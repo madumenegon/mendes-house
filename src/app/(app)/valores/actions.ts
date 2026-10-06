@@ -36,7 +36,7 @@ export async function salvarValor(fd: FormData): Promise<Resultado> {
     descricao: texto(fd, "descricao"),
     escopo,
     emoji: texto(fd, "emoji") || "✨",
-    cor: texto(fd, "cor") || "#9b6bd6",
+    cor: texto(fd, "cor") || "#8b55c9",
   };
   const supa = db();
   const { error } = id

@@ -14,15 +14,15 @@ import {
 } from "./actions";
 
 const OPCOES_ESCOPO: { valor: Escopo; label: string; cor: string }[] = [
-  { valor: "familiar", label: "Familiar", cor: "#9b6bd6" },
-  { valor: "madu", label: "Madu", cor: "#e0527e" },
-  { valor: "gabriel", label: "Gabriel", cor: "#3b7dd8" },
+  { valor: "familiar", label: "Familiar", cor: "#8b55c9" },
+  { valor: "madu", label: "Madu", cor: "#e8508a" },
+  { valor: "gabriel", label: "Gabriel", cor: "#2f86c8" },
 ];
 
 const GRUPOS: { escopo: Escopo; titulo: string; cor: string }[] = [
-  { escopo: "familiar", titulo: "Valores da família", cor: "#9b6bd6" },
-  { escopo: "madu", titulo: "Valores da Madu", cor: "#e0527e" },
-  { escopo: "gabriel", titulo: "Valores do Gabriel", cor: "#3b7dd8" },
+  { escopo: "familiar", titulo: "Valores da família", cor: "#8b55c9" },
+  { escopo: "madu", titulo: "Valores da Madu", cor: "#e8508a" },
+  { escopo: "gabriel", titulo: "Valores do Gabriel", cor: "#2f86c8" },
 ];
 
 export function ValoresCliente({ familia, valores, prioridades }: { familia: FamiliaInfo; valores: Valor[]; prioridades: Prioridade[] }) {
@@ -68,7 +68,7 @@ function Missao({ familia }: { familia: FamiliaInfo }) {
   }
 
   return (
-    <div className="card relative overflow-hidden bg-[linear-gradient(135deg,#b5573a,#d08155)] p-6 text-white sm:p-8">
+    <div className="card relative overflow-hidden bg-[linear-gradient(135deg,#8e1b4f,#e0601a)] p-6 text-white sm:p-8">
       <div className="absolute -right-10 -top-10 h-44 w-44 rounded-full bg-white/10" />
       <div className="absolute -bottom-16 right-24 h-36 w-36 rounded-full bg-casa-destaque/30" />
       <div className="relative">
@@ -158,7 +158,7 @@ function ListaValores({ valores }: { valores: Valor[] }) {
 
 function FormValor({ valor, escopoInicial, onFechar }: { valor: Valor | null; escopoInicial: Escopo; onFechar: () => void }) {
   const [escopo, setEscopo] = useState<Escopo>(valor?.escopo ?? escopoInicial);
-  const [cor, setCor] = useState(valor?.cor ?? "#9b6bd6");
+  const [cor, setCor] = useState(valor?.cor ?? "#8b55c9");
   const [emoji, setEmoji] = useState(valor?.emoji ?? "✨");
   const { pendente, erro, rodar } = useAcao();
 

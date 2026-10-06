@@ -53,9 +53,9 @@ export default async function FinancasPage({ searchParams }: PageProps<"/financa
       <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
         <StatTile rotulo="Receitas" valor={moeda(r.receitas)} icone="💼" cor="#16a34a"
           detalhe={<>Salários/rendas {moeda(salarios)} · Vales {moeda(r.valeRecebido)}</>} />
-        <StatTile rotulo="Despesas" valor={moeda(r.despesas)} icone="🧾" cor="#e0527e"
+        <StatTile rotulo="Despesas" valor={moeda(r.despesas)} icone="🧾" cor="#e8508a"
           detalhe={<>{moeda(r.pago)} pagos · {moeda(r.aPagar)} a pagar</>} />
-        <StatTile rotulo="Saldo do mês" valor={moeda(r.saldo)} icone={r.saldo >= 0 ? "😊" : "😬"} cor={r.saldo >= 0 ? "#b5573a" : "#dc2626"} destaque
+        <StatTile rotulo="Saldo do mês" valor={moeda(r.saldo)} icone={r.saldo >= 0 ? "😊" : "😬"} cor={r.saldo >= 0 ? "#e0601a" : "#dc2626"} destaque
           detalhe={r.receitas > 0 ? <>Gastamos {pct(r.despesas, r.receitas)}% do que entrou</> : "Lance as receitas do mês"} />
         <StatTile rotulo="Livre após caixinhas" valor={moeda(r.livre)} icone="🐷" cor="#0ea5e9"
           detalhe={<>Guardado no mês: {moeda(r.depositos - r.retiradas)}</>} />

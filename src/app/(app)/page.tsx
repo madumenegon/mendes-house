@@ -45,7 +45,7 @@ export default async function InicioPage() {
 
   return (
     <div className="space-y-5">
-      <div className="card relative overflow-hidden bg-[linear-gradient(120deg,#fbe6d3,#fff_55%,#f7ead0)] p-5 sm:p-6">
+      <div className="card relative overflow-hidden bg-[linear-gradient(120deg,#fcdde0,#fff_55%,#d9ecfa)] p-5 sm:p-6">
         <p className="text-sm font-semibold text-casa-muted">{dataLonga(hoje)}</p>
         <h1 className="mt-1 font-display text-3xl font-semibold sm:text-4xl">
           {saudacao}, <span style={{ color: CORES[membro] }}>{membro === "madu" ? "Madu" : "Gabriel"}</span>!
@@ -96,9 +96,9 @@ export default async function InicioPage() {
       </div>
 
       <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
-        <StatTile rotulo="Saldo do mês" valor={moeda(r.saldo)} icone="💰" cor={r.saldo >= 0 ? "#b5573a" : "#dc2626"} destaque />
-        <StatTile rotulo="A pagar no mês" valor={moeda(r.aPagar)} icone="🧾" cor="#e0527e" detalhe={`${moeda(r.pago)} já pagos`} />
-        <StatTile rotulo="Lista de compras" valor={`${naLista ?? 0} itens`} icone="🛒" cor="#0d9488" detalhe={<Link href="/casa/compras" className="font-bold underline">abrir lista</Link>} />
+        <StatTile rotulo="Saldo do mês" valor={moeda(r.saldo)} icone="💰" cor={r.saldo >= 0 ? "#e0601a" : "#dc2626"} destaque />
+        <StatTile rotulo="A pagar no mês" valor={moeda(r.aPagar)} icone="🧾" cor="#e8508a" detalhe={`${moeda(r.pago)} já pagos`} />
+        <StatTile rotulo="Lista de compras" valor={`${naLista ?? 0} itens`} icone="🛒" cor="#3fa79f" detalhe={<Link href="/casa/compras" className="font-bold underline">abrir lista</Link>} />
         <StatTile rotulo="Acabando em casa" valor={acabando.length} icone="🥫" cor="#d97706" detalhe={<Link href="/casa/despensa" className="font-bold underline">ver despensa</Link>} />
       </div>
 

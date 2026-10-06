@@ -95,12 +95,12 @@ export function AgendaCliente(p: Props) {
         </div>
         <div className="flex flex-wrap items-center gap-2">
           <div className="flex flex-wrap gap-1">
-            {[...DONOS, { valor: "tarefas" as const, label: "🧹 Tarefas", cor: "#0d9488" }].map((d) => (
+            {[...DONOS, { valor: "tarefas" as const, label: "🧹 Tarefas", cor: "#3fa79f" }].map((d) => (
               <button
                 key={d.valor}
                 onClick={() => setFiltro((f) => ({ ...f, [d.valor]: !f[d.valor] }))}
                 className="rounded-full border px-2.5 py-1 text-xs font-bold transition"
-                style={filtro[d.valor] ? { background: `${d.cor}18`, borderColor: d.cor, color: d.cor } : { borderColor: "#eee0cf", color: "#b3a99f", textDecoration: "line-through" }}
+                style={filtro[d.valor] ? { background: `${d.cor}18`, borderColor: d.cor, color: d.cor } : { borderColor: "#f0e2c4", color: "#b3a99f", textDecoration: "line-through" }}
               >
                 {d.label}
               </button>
@@ -480,7 +480,7 @@ function FormEvento({ edicao, membro, valores, onFechar }: { edicao: Edicao; mem
               key={v.id}
               onClick={() => setValorId(v.id)}
               className="flex items-center gap-1 rounded-full border-2 px-2.5 py-1 text-xs font-bold transition"
-              style={valorId === v.id ? { borderColor: v.cor, background: `${v.cor}1c`, color: v.cor } : { borderColor: "#eee0cf", color: "#5c534c" }}
+              style={valorId === v.id ? { borderColor: v.cor, background: `${v.cor}1c`, color: v.cor } : { borderColor: "#f0e2c4", color: "#5c534c" }}
               title={v.escopo === "familiar" ? "Valor familiar" : `Valor de ${NOMES[v.escopo]}`}
             >
               {v.emoji} {v.nome}

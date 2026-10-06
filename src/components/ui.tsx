@@ -18,7 +18,7 @@ export function DonoBadge({ dono, pequeno }: { dono: Dono | Pessoa | Responsavel
 }
 
 export function StatTile({
-  rotulo, valor, detalhe, icone, cor = "#b5573a", destaque,
+  rotulo, valor, detalhe, icone, cor = "#e0601a", destaque,
 }: { rotulo: string; valor: ReactNode; detalhe?: ReactNode; icone?: ReactNode; cor?: string; destaque?: boolean }) {
   return (
     <div className={clsx("card relative min-w-0 overflow-hidden p-4", destaque && "text-white")} style={destaque ? { background: cor, borderColor: cor } : undefined}>

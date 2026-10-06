@@ -4,8 +4,8 @@ import type { MembroId } from "@/lib/types";
 import { Barra } from "@/components/ui";
 
 const INFO: Record<MembroId, { nome: string; cor: string; claro: string }> = {
-  madu: { nome: "Madu", cor: "#e0527e", claro: "#fde7ee" },
-  gabriel: { nome: "Gabriel", cor: "#3b7dd8", claro: "#e3eefc" },
+  madu: { nome: "Madu", cor: "#e8508a", claro: "#fcdde0" },
+  gabriel: { nome: "Gabriel", cor: "#2f86c8", claro: "#d9ecfa" },
 };
 
 /** Cards "Compromissos na semana — Madu / Gabriel". */

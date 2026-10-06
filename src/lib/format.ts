@@ -33,11 +33,11 @@ export function parseValor(txt: string | null | undefined): number {
 }
 
 export const CORES = {
-  madu: "#e0527e",
-  gabriel: "#3b7dd8",
-  compartilhado: "#9b6bd6",
-  casal: "#9b6bd6",
-  revezar: "#0d9488",
+  madu: "#e8508a",
+  gabriel: "#2f86c8",
+  compartilhado: "#8b55c9",
+  casal: "#8b55c9",
+  revezar: "#3fa79f",
 } as const;
 
 export const NOMES: Record<MembroId | Dono | Pessoa | Responsavel, string> = {
@@ -49,8 +49,8 @@ export const NOMES: Record<MembroId | Dono | Pessoa | Responsavel, string> = {
 };
 
 export const PALETA_EVENTOS = [
-  "#e0527e", "#f43f5e", "#f97316", "#f59e0b", "#eab308", "#84cc16",
-  "#10b981", "#14b8a6", "#0ea5e9", "#3b7dd8", "#6366f1", "#9b6bd6",
+  "#e8508a", "#f43f5e", "#f97316", "#f59e0b", "#eab308", "#84cc16",
+  "#10b981", "#14b8a6", "#0ea5e9", "#2f86c8", "#6366f1", "#8b55c9",
   "#a855f7", "#d946ef", "#64748b", "#a16207",
 ];
 

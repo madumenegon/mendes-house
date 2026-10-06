@@ -182,7 +182,7 @@ function FormLancamento({
               key={c.id}
               onClick={() => escolherCategoria(c.id)}
               className="rounded-full border-2 px-2.5 py-1 text-xs font-bold"
-              style={categoriaId === c.id ? { borderColor: c.cor, background: `${c.cor}1c`, color: c.cor } : { borderColor: "#eee0cf", color: "#5c534c" }}
+              style={categoriaId === c.id ? { borderColor: c.cor, background: `${c.cor}1c`, color: c.cor } : { borderColor: "#f0e2c4", color: "#5c534c" }}
             >
               {c.emoji} {c.nome}
             </button>

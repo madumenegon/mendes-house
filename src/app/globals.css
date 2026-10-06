@@ -1,22 +1,22 @@
 @import "tailwindcss";
 
 @theme {
-  --color-casa-bg: #faf4ec;
+  --color-casa-bg: #fbf4e4;
   --color-casa-card: #ffffff;
-  --color-casa-ink: #2b2420;
-  --color-casa-muted: #7d6f63;
-  --color-casa-line: #eee0cf;
-  --color-casa-principal: #b5573a;
-  --color-casa-principalclaro: #f6e3da;
-  --color-casa-destaque: #e9b44c;
-  --color-casa-destaqueescuro: #a26f12;
-  --color-casa-destaqueclaro: #fbf0d6;
-  --color-madu: #e0527e;
-  --color-maduclaro: #fde7ee;
-  --color-gabriel: #3b7dd8;
-  --color-gabrielclaro: #e3eefc;
-  --color-juntos: #9b6bd6;
-  --color-juntosclaro: #f1e8fb;
+  --color-casa-ink: #34171f;
+  --color-casa-muted: #8a6e62;
+  --color-casa-line: #f0e2c4;
+  --color-casa-principal: #e0601a;
+  --color-casa-principalclaro: #fde6d4;
+  --color-casa-destaque: #edc45a;
+  --color-casa-destaqueescuro: #9a6f0b;
+  --color-casa-destaqueclaro: #fbf1cf;
+  --color-madu: #e8508a;
+  --color-maduclaro: #fcdde0;
+  --color-gabriel: #2f86c8;
+  --color-gabrielclaro: #d9ecfa;
+  --color-juntos: #8b55c9;
+  --color-juntosclaro: #efe5fa;
   --color-ok: #16a34a;
   --color-okclaro: #dcfce7;
   --color-alerta: #d97706;
@@ -40,7 +40,7 @@ body {
   @apply inline-flex items-center justify-center gap-1.5 rounded-xl px-3.5 py-2 text-sm font-semibold transition active:scale-[0.98] disabled:opacity-50 disabled:pointer-events-none;
 }
 @utility btn-primario {
-  @apply btn bg-casa-principal text-white hover:bg-[#9a4830];
+  @apply btn bg-casa-principal text-white hover:bg-[#c44f0f];
 }
 @utility btn-secundario {
   @apply btn bg-white border border-casa-line text-casa-ink hover:bg-casa-bg;

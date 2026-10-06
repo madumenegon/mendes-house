@@ -1,0 +1,223 @@
+"use client";
+
+import { useState } from "react";
+import Link from "next/link";
+import clsx from "clsx";
+import { FileUp, Loader2, Sparkles } from "lucide-react";
+import { useAcao } from "@/components/useAcao";
+import { FORMAS, moeda } from "@/lib/format";
+import { dataCurta, mesDe } from "@/lib/datas";
+import type { Categoria, Pessoa, TipoLancamento } from "@/lib/types";
+import { importarLancamentos, type LinhaImportada } from "../actions";
+
+interface Historico { data: string; valor: number; tipo: TipoLancamento; descricao: string; categoria_id: string | null }
+interface Linha extends LinhaImportada { incluir: boolean; duplicada: boolean }
+
+const normalizar = (s: string) =>
+  s.toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g, "").replace(/\d+/g, "").replace(/\s+/g, " ").trim();
+
+export function ImportarCliente({ categorias, historico, temIA }: { categorias: Categoria[]; historico: Historico[]; temIA: boolean }) {
+  const [linhas, setLinhas] = useState<Linha[] | null>(null);
+  const [lendo, setLendo] = useState(false);
+  const [info, setInfo] = useState<string | null>(null);
+  const [erroLeitura, setErroLeitura] = useState<string | null>(null);
+  const [pessoaPadrao, setPessoaPadrao] = useState<Pessoa>("casal");
+  const [formaPadrao, setFormaPadrao] = useState("debito");
+  const [concluido, setConcluido] = useState<string | null>(null);
+  const { rodar, pendente, erro } = useAcao();
+
+  const sugerirCategoria = (descricao: string, tipo: TipoLancamento) => {
+    const n = normalizar(descricao);
+    const anterior = historico.find((h) => h.tipo === tipo && h.categoria_id && normalizar(h.descricao) === n);
+    if (anterior) return anterior.categoria_id;
+    const cats = categorias.filter((c) => c.tipo === tipo);
+    for (const c of cats) {
+      const chaves = c.palavras_chave.split(",").map((k) => normalizar(k)).filter(Boolean);
+      if (chaves.some((k) => n.includes(k))) return c.id;
+    }
+    return cats.find((c) => /^outr/i.test(c.nome))?.id ?? null;
+  };
+
+  const enviar = async (arquivo: File) => {
+    setLendo(true);
+    setErroLeitura(null);
+    setInfo(null);
+    setConcluido(null);
+    try {
+      const fd = new FormData();
+      fd.append("arquivo", arquivo);
+      const resp = await fetch("/api/extrato", { method: "POST", body: fd });
+      const json = await resp.json();
+      if (!resp.ok) throw new Error(json.erro ?? "Falha ao ler o PDF.");
+      const lidas = json.transacoes as { data: string; descricao: string; valor: number; tipo: TipoLancamento }[];
+      if (!lidas.length) {
+        setErroLeitura("Não encontrei transações neste PDF. " + (temIA ? "" : "Sem a leitura inteligente (IA), só funciona com extratos em texto no formato “dd/mm descrição valor”."));
+        setLinhas(null);
+        return;
+      }
+      const catMap = new Map(categorias.map((c) => [c.id, c]));
+      setLinhas(
+        lidas.map((t) => {
+          const categoria_id = sugerirCategoria(t.descricao, t.tipo);
+          const duplicada = historico.some((h) => h.data === t.data && h.tipo === t.tipo && Math.abs(h.valor - t.valor) < 0.005);
+          return {
+            ...t,
+            categoria_id,
+            natureza: (categoria_id && catMap.get(categoria_id)?.natureza) || "variavel",
+            pessoa: pessoaPadrao,
+            forma: formaPadrao,
+            incluir: !duplicada,
+            duplicada,
+          };
+        })
+      );
+      setInfo(`${lidas.length} transações encontradas (${json.metodo === "ia" ? "leitura inteligente" : "leitura simples"}).${json.aviso ? " " + json.aviso : ""}`);
+    } catch (e) {
+      setErroLeitura(e instanceof Error ? e.message : "Falha ao ler o PDF.");
+    } finally {
+      setLendo(false);
+    }
+  };
+
+  const atualizar = (i: number, campos: Partial<Linha>) =>
+    setLinhas((ls) => ls && ls.map((l, j) => (j === i ? { ...l, ...campos } : l)));
+  const aplicarATodas = (campos: Partial<Linha>) => setLinhas((ls) => ls && ls.map((l) => ({ ...l, ...campos })));
+
+  const selecionadas = linhas?.filter((l) => l.incluir) ?? [];
+  const totalSaidas = selecionadas.filter((l) => l.tipo === "despesa").reduce((s, l) => s + l.valor, 0);
+  const totalEntradas = selecionadas.filter((l) => l.tipo === "receita").reduce((s, l) => s + l.valor, 0);
+  const meses = Array.from(new Set(selecionadas.map((l) => mesDe(l.data))));
+
+  return (
+    <div className="space-y-4">
+      <label
+        className={clsx(
+          "card flex cursor-pointer flex-col items-center justify-center gap-2 border-2 border-dashed p-8 text-center transition hover:border-casa-verde hover:bg-casa-verdeclaro/30",
+          lendo && "pointer-events-none opacity-70"
+        )}
+        onDragOver={(e) => e.preventDefault()}
+        onDrop={(e) => { e.preventDefault(); const f = e.dataTransfer.files[0]; if (f) enviar(f); }}
+      >
+        <input type="file" accept="application/pdf" className="sr-only" onChange={(e) => { const f = e.target.files?.[0]; if (f) enviar(f); e.target.value = ""; }} />
+        {lendo ? <Loader2 className="animate-spin text-casa-verde" size={36} /> : <FileUp className="text-casa-verde" size={36} />}
+        <p className="font-display text-lg font-semibold">{lendo ? "Lendo o extrato…" : "Clique ou arraste o PDF do extrato / fatura"}</p>
+        <p className="flex items-center gap-1 text-xs text-casa-muted">
+          {temIA ? <><Sparkles size={13} className="text-casa-terra" /> Leitura inteligente ativada — funciona com qualquer banco.</> : "Leitura simples (extratos em texto). Para qualquer banco, configure a chave da IA."}
+        </p>
+      </label>
+
+      {erroLeitura && <p className="rounded-xl bg-perigoclaro px-3 py-2 text-sm text-perigo">{erroLeitura}</p>}
+      {concluido && (
+        <p className="rounded-xl bg-okclaro px-3 py-2 text-sm font-semibold text-ok">
+          {concluido} <Link href={`/financas/lancamentos?mes=${meses[0] ?? ""}`} className="underline">Ver lançamentos →</Link>
+        </p>
+      )}
+
+      {linhas && (
+        <div className="card overflow-hidden">
+          <div className="flex flex-wrap items-center justify-between gap-3 border-b border-casa-line p-4">
+            <div>
+              <p className="font-display text-lg font-semibold">Revise antes de importar</p>
+              {info && <p className="text-xs text-casa-muted">{info} Linhas já lançadas (mesma data e valor) vêm desmarcadas.</p>}
+            </div>
+            <div className="flex flex-wrap items-center gap-2 text-sm">
+              <select className="campo w-auto py-1.5" value={pessoaPadrao} onChange={(e) => { setPessoaPadrao(e.target.value as Pessoa); aplicarATodas({ pessoa: e.target.value as Pessoa }); }}>
+                <option value="casal">Todas: Casal</option>
+                <option value="madu">Todas: Madu</option>
+                <option value="gabriel">Todas: Gabriel</option>
+              </select>
+              <select className="campo w-auto py-1.5" value={formaPadrao} onChange={(e) => { setFormaPadrao(e.target.value); aplicarATodas({ forma: e.target.value }); }}>
+                {Object.entries(FORMAS).map(([k, v]) => <option key={k} value={k}>Todas: {v}</option>)}
+              </select>
+            </div>
+          </div>
+          <div className="overflow-x-auto">
+            <table className="w-full min-w-[760px] text-sm">
+              <thead className="bg-casa-bg/70 text-left text-[11px] uppercase tracking-wide text-casa-muted">
+                <tr>
+                  <th className="p-2 pl-4"><input type="checkbox" className="accent-casa-verde" checked={selecionadas.length === linhas.length} onChange={(e) => aplicarATodas({ incluir: e.target.checked })} /></th>
+                  <th className="p-2">Data</th>
+                  <th className="p-2">Descrição</th>
+                  <th className="p-2 text-right">Valor</th>
+                  <th className="p-2">Categoria</th>
+                  <th className="p-2">Tipo de custo</th>
+                  <th className="p-2 pr-4">De quem</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-casa-line">
+                {linhas.map((l, i) => (
+                  <tr key={i} className={clsx(!l.incluir && "opacity-45")}>
+                    <td className="p-2 pl-4"><input type="checkbox" className="accent-casa-verde" checked={l.incluir} onChange={(e) => atualizar(i, { incluir: e.target.checked })} /></td>
+                    <td className="whitespace-nowrap p-2 tabular-nums">{dataCurta(l.data)}</td>
+                    <td className="p-2">
+                      <input value={l.descricao} onChange={(e) => atualizar(i, { descricao: e.target.value })} className="w-full min-w-48 rounded-lg border border-transparent px-1.5 py-1 hover:border-casa-line focus:border-casa-verde focus:outline-none" />
+                      {l.duplicada && <span className="ml-1.5 rounded bg-alertaclaro px-1.5 text-[10px] font-bold text-alerta">já lançado?</span>}
+                    </td>
+                    <td className={clsx("whitespace-nowrap p-2 text-right font-bold tabular-nums", l.tipo === "receita" ? "text-ok" : "")}>
+                      <button type="button" title="Inverter entrada/saída" onClick={() => atualizar(i, { tipo: l.tipo === "receita" ? "despesa" : "receita", categoria_id: null })}>
+                        {l.tipo === "receita" ? "+" : "−"}{moeda(l.valor)}
+                      </button>
+                    </td>
+                    <td className="p-2">
+                      <select
+                        value={l.categoria_id ?? ""}
+                        onChange={(e) => {
+                          const c = categorias.find((x) => x.id === e.target.value);
+                          atualizar(i, { categoria_id: e.target.value || null, ...(c ? { natureza: c.natureza } : {}) });
+                        }}
+                        className="campo py-1 text-xs"
+                      >
+                        <option value="">—</option>
+                        {categorias.filter((c) => c.tipo === l.tipo).map((c) => <option key={c.id} value={c.id}>{c.emoji} {c.nome}</option>)}
+                      </select>
+                    </td>
+                    <td className="p-2">
+                      {l.tipo === "despesa" ? (
+                        <select value={l.natureza} onChange={(e) => atualizar(i, { natureza: e.target.value as "fixo" | "variavel" })} className="campo py-1 text-xs">
+                          <option value="fixo">Fixo</option>
+                          <option value="variavel">Variável</option>
+                        </select>
+                      ) : <span className="text-xs text-casa-muted">—</span>}
+                    </td>
+                    <td className="p-2 pr-4">
+                      <select value={l.pessoa} onChange={(e) => atualizar(i, { pessoa: e.target.value as Pessoa })} className="campo py-1 text-xs">
+                        <option value="casal">Casal</option>
+                        <option value="madu">Madu</option>
+                        <option value="gabriel">Gabriel</option>
+                      </select>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+          <div className="flex flex-wrap items-center justify-between gap-3 border-t border-casa-line bg-casa-bg/50 p-4">
+            <p className="text-sm">
+              <b>{selecionadas.length}</b> selecionadas · <span className="font-bold text-ok">+{moeda(totalEntradas)}</span> · <span className="font-bold text-madu">−{moeda(totalSaidas)}</span>
+            </p>
+            {erro && <p className="text-sm text-perigo">{erro}</p>}
+            <button
+              className="btn-primario"
+              disabled={pendente || !selecionadas.length}
+              onClick={() =>
+                rodar(async () => {
+                  const r = await importarLancamentos(selecionadas.map((l) => ({
+                    data: l.data, descricao: l.descricao, valor: l.valor, tipo: l.tipo,
+                    categoria_id: l.categoria_id, natureza: l.natureza, pessoa: l.pessoa, forma: l.forma,
+                  })));
+                  if (!r.erro) {
+                    setConcluido(`${r.inseridos} lançamentos importados como pagos/recebidos.`);
+                    setLinhas(null);
+                  }
+                  return r;
+                })
+              }
+            >
+              {pendente ? "Importando…" : `Importar ${selecionadas.length} lançamentos`}
+            </button>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}

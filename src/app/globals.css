@@ -1,0 +1,63 @@
+@import "tailwindcss";
+
+@theme {
+  --color-casa-bg: #faf6f0;
+  --color-casa-card: #ffffff;
+  --color-casa-ink: #2a2622;
+  --color-casa-muted: #7a7068;
+  --color-casa-line: #ece4d9;
+  --color-casa-verde: #2f5d50;
+  --color-casa-verdeclaro: #e3efe9;
+  --color-casa-terra: #d9774b;
+  --color-casa-terraclaro: #fbe9df;
+  --color-madu: #e0527e;
+  --color-maduclaro: #fde7ee;
+  --color-gabriel: #3b7dd8;
+  --color-gabrielclaro: #e3eefc;
+  --color-juntos: #8b5cf6;
+  --color-juntosclaro: #efe9fe;
+  --color-ok: #16a34a;
+  --color-okclaro: #dcfce7;
+  --color-alerta: #d97706;
+  --color-alertaclaro: #fef3c7;
+  --color-perigo: #dc2626;
+  --color-perigoclaro: #fee2e2;
+  --font-sans: var(--font-nunito), ui-sans-serif, system-ui, sans-serif;
+  --font-display: var(--font-fraunces), Georgia, serif;
+}
+
+body {
+  background: var(--color-casa-bg);
+  color: var(--color-casa-ink);
+}
+
+@utility card {
+  @apply rounded-2xl bg-casa-card border border-casa-line shadow-[0_1px_2px_rgba(60,40,20,0.04)];
+}
+
+@utility btn {
+  @apply inline-flex items-center justify-center gap-1.5 rounded-xl px-3.5 py-2 text-sm font-semibold transition active:scale-[0.98] disabled:opacity-50 disabled:pointer-events-none;
+}
+@utility btn-primario {
+  @apply btn bg-casa-verde text-white hover:bg-[#264d42];
+}
+@utility btn-secundario {
+  @apply btn bg-white border border-casa-line text-casa-ink hover:bg-casa-bg;
+}
+@utility btn-perigo {
+  @apply btn bg-perigoclaro text-perigo hover:bg-[#fecaca];
+}
+@utility btn-fantasma {
+  @apply btn text-casa-muted hover:bg-black/5;
+}
+
+@utility campo {
+  @apply w-full rounded-xl border border-casa-line bg-white px-3 py-2 text-sm outline-none focus:border-casa-verde focus:ring-2 focus:ring-casa-verde/15;
+}
+@utility rotulo {
+  @apply mb-1 block text-xs font-bold uppercase tracking-wide text-casa-muted;
+}
+
+@utility titulo-pagina {
+  @apply font-display text-2xl font-semibold text-casa-ink sm:text-3xl;
+}

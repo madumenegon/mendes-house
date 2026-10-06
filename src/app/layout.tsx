@@ -8,6 +8,7 @@ export const metadata: Metadata = {
   title: "Mendes' House",
   description: "Finanças, agenda, casa e valores da família Mendes.",
   icons: { icon: "/icon.svg" },
+  robots: { index: false, follow: false },
 };
 
 export const viewport: Viewport = { themeColor: "#e0601a" };

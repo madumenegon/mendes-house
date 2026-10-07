@@ -5,10 +5,18 @@ import { db } from "@/lib/supabase";
 import { atualizarTudo, erroDb, numeroOuNull, texto, textoOuNull, type Resultado } from "@/lib/acoes";
 import { dataValida, hojeISO, mesDe, mesValido } from "@/lib/datas";
 import { gerarContasFixasDoMes } from "@/lib/dados";
+import { vencimentoFatura } from "@/lib/cartao";
+import type { Cartao } from "@/lib/types";
 
 const PESSOAS = ["madu", "gabriel", "casal"];
 
 // ------------------------------------------------------------------ lançamentos
+
+async function buscarCartao(id: string | null): Promise<Cartao | null> {
+  if (!id) return null;
+  const { data } = await db().from("cartoes").select("*").eq("id", id).single();
+  return (data as Cartao) ?? null;
+}
 
 export async function salvarLancamento(fd: FormData): Promise<Resultado> {
   const membro = await exigirMembro();
@@ -16,15 +24,17 @@ export async function salvarLancamento(fd: FormData): Promise<Resultado> {
   const tipo = texto(fd, "tipo");
   const descricao = texto(fd, "descricao");
   const valor = numeroOuNull(fd, "valor");
-  const data = texto(fd, "data");
+  const data = texto(fd, "data"); // no cartão: data da compra
   const pessoa = texto(fd, "pessoa") || "casal";
   const pago = fd.get("pago") === "on";
+  const forma = texto(fd, "forma") || "pix";
   if (tipo !== "receita" && tipo !== "despesa") return { erro: "Escolha receita ou despesa." };
   if (!descricao) return { erro: "Descreva o lançamento." };
   if (!valor || valor <= 0) return { erro: "Informe um valor maior que zero." };
   if (!dataValida(data)) return { erro: "Informe a data." };
   if (!PESSOAS.includes(pessoa)) return { erro: "Pessoa inválida." };
 
+  const cartao = tipo === "despesa" && forma === "credito" ? await buscarCartao(textoOuNull(fd, "cartao_id")) : null;
   const parcelas = id ? 1 : Math.min(48, Math.max(1, numeroOuNull(fd, "parcelas") ?? 1));
   const base = {
     tipo,
@@ -32,31 +42,43 @@ export async function salvarLancamento(fd: FormData): Promise<Resultado> {
     categoria_id: textoOuNull(fd, "categoria_id"),
     natureza: texto(fd, "natureza") === "fixo" ? "fixo" : "variavel",
     pessoa,
-    forma: texto(fd, "forma") || "pix",
+    forma,
+    cartao_id: cartao?.id ?? null,
+    data_compra: cartao ? data : null,
     observacao: texto(fd, "observacao"),
     updated_by: membro,
   };
   const supa = db();
 
   if (id) {
+    let venc = data;
+    if (cartao) {
+      // mantém a fatura de uma parcela se compra e cartão não mudaram
+      const { data: atual } = await supa.from("lancamentos").select("data, data_compra, cartao_id").eq("id", id).single();
+      venc = atual && atual.cartao_id === cartao.id && atual.data_compra === data ? atual.data : vencimentoFatura(data, cartao);
+    }
     const { error } = await supa
       .from("lancamentos")
       .update({
-        ...base, valor, data, competencia: mesDe(data), pago,
+        ...base, valor, data: venc, competencia: mesDe(venc), pago,
         pago_em: pago ? textoOuNull(fd, "pago_em") ?? hojeISO() : null,
         pago_por: pago ? membro : null,
       })
       .eq("id", id);
     if (error) return { erro: error.message };
   } else {
-    // compra parcelada: divide o valor e lança um por mês
+    // compra parcelada: divide o valor e lança um por mês (no cartão, uma por fatura)
     const valorParcela = Math.round((valor / parcelas) * 100) / 100;
     const [a, m, d] = data.split("-").map(Number);
     const linhas = Array.from({ length: parcelas }, (_, i) => {
-      const dt = new Date(Date.UTC(a, m - 1 + i, 1));
-      const ultimo = new Date(Date.UTC(dt.getUTCFullYear(), dt.getUTCMonth() + 1, 0)).getUTCDate();
-      dt.setUTCDate(Math.min(d, ultimo));
-      const iso = dt.toISOString().slice(0, 10);
+      let iso: string;
+      if (cartao) iso = vencimentoFatura(data, cartao, i);
+      else {
+        const dt = new Date(Date.UTC(a, m - 1 + i, 1));
+        const ultimo = new Date(Date.UTC(dt.getUTCFullYear(), dt.getUTCMonth() + 1, 0)).getUTCDate();
+        dt.setUTCDate(Math.min(d, ultimo));
+        iso = dt.toISOString().slice(0, 10);
+      }
       const ehPago = pago && i === 0;
       return {
         ...base,
@@ -88,6 +110,21 @@ export async function alternarPago(id: string, pago: boolean): Promise<Resultado
   return {};
 }
 
+/** Marca (ou desmarca) como paga a fatura inteira de um cartão num mês. */
+export async function pagarFatura(cartaoId: string, competencia: string, pago: boolean): Promise<Resultado> {
+  const membro = await exigirMembro();
+  if (!mesValido(competencia)) return { erro: "Mês inválido." };
+  const { error } = await db()
+    .from("lancamentos")
+    .update({ pago, pago_em: pago ? hojeISO() : null, pago_por: pago ? membro : null, updated_by: membro })
+    .eq("cartao_id", cartaoId)
+    .eq("competencia", competencia)
+    .eq("tipo", "despesa");
+  if (error) return { erro: error.message };
+  atualizarTudo();
+  return {};
+}
+
 export async function excluirLancamento(id: string): Promise<Resultado> {
   await exigirMembro();
   const { error } = await db().from("lancamentos").delete().eq("id", id);
@@ -107,33 +144,109 @@ export interface LinhaImportada {
   forma: string;
 }
 
-export async function importarLancamentos(linhas: LinhaImportada[]): Promise<Resultado & { inseridos?: number }> {
+/** Sem `fatura`: extrato de conta (tudo já aconteceu → pago na própria data).
+ * Com `fatura`: fatura de cartão — as compras guardam a data da compra e vão
+ * todas para o vencimento informado. */
+export async function importarLancamentos(
+  linhas: LinhaImportada[],
+  fatura?: { cartao_id: string; vencimento: string; pago: boolean }
+): Promise<Resultado & { inseridos?: number }> {
   const membro = await exigirMembro();
   const validas = linhas.filter((l) => dataValida(l.data) && l.valor > 0 && l.descricao && (l.tipo === "receita" || l.tipo === "despesa"));
   if (!validas.length) return { erro: "Nenhuma linha válida para importar." };
+  if (fatura && (!fatura.cartao_id || !dataValida(fatura.vencimento))) return { erro: "Escolha o cartão e o vencimento da fatura." };
   const { error } = await db()
     .from("lancamentos")
     .insert(
-      validas.map((l) => ({
-        tipo: l.tipo,
-        descricao: l.descricao.slice(0, 200),
-        valor: Math.round(l.valor * 100) / 100,
-        data: l.data,
-        competencia: mesDe(l.data),
-        categoria_id: l.categoria_id,
-        natureza: l.natureza === "fixo" ? "fixo" : "variavel",
-        pessoa: PESSOAS.includes(l.pessoa) ? l.pessoa : "casal",
-        forma: l.forma || "debito",
-        pago: true, // veio do extrato: já aconteceu
-        pago_em: l.data,
-        pago_por: membro,
-        origem: "extrato",
-        created_by: membro,
-      }))
+      validas.map((l) => {
+        const comum = {
+          tipo: l.tipo,
+          descricao: l.descricao.slice(0, 200),
+          valor: Math.round(l.valor * 100) / 100,
+          categoria_id: l.categoria_id,
+          natureza: l.natureza === "fixo" ? "fixo" : "variavel",
+          pessoa: PESSOAS.includes(l.pessoa) ? l.pessoa : "casal",
+          origem: "extrato",
+          created_by: membro,
+        };
+        if (fatura) {
+          return {
+            ...comum,
+            forma: "credito",
+            cartao_id: fatura.cartao_id,
+            data_compra: l.data,
+            data: fatura.vencimento,
+            competencia: mesDe(fatura.vencimento),
+            pago: fatura.pago,
+            pago_em: fatura.pago ? fatura.vencimento : null,
+            pago_por: fatura.pago ? membro : null,
+          };
+        }
+        return {
+          ...comum,
+          forma: l.forma || "debito",
+          data: l.data,
+          competencia: mesDe(l.data),
+          pago: true, // veio do extrato: já aconteceu
+          pago_em: l.data,
+          pago_por: membro,
+        };
+      })
     );
   if (error) return { erro: error.message };
   atualizarTudo();
   return { inseridos: validas.length };
+}
+
+// ------------------------------------------------------------------ cartões e ciclo
+
+export async function salvarCartao(fd: FormData): Promise<Resultado> {
+  const membro = await exigirMembro();
+  const id = textoOuNull(fd, "id");
+  const nome = texto(fd, "nome");
+  const fech = numeroOuNull(fd, "dia_fechamento");
+  const venc = numeroOuNull(fd, "dia_vencimento");
+  if (!nome) return { erro: "Dê um nome ao cartão." };
+  if (!fech || fech < 1 || fech > 31) return { erro: "Dia de fechamento entre 1 e 31." };
+  if (!venc || venc < 1 || venc > 31) return { erro: "Dia de vencimento entre 1 e 31." };
+  const dados = {
+    nome,
+    dono: PESSOAS.includes(texto(fd, "dono")) ? texto(fd, "dono") : "casal",
+    cor: texto(fd, "cor") || "#e0601a",
+    dia_fechamento: fech,
+    dia_vencimento: venc,
+    limite: numeroOuNull(fd, "limite"),
+    ativo: fd.get("ativo") !== "off",
+  };
+  const supa = db();
+  const { error } = id
+    ? await supa.from("cartoes").update(dados).eq("id", id)
+    : await supa.from("cartoes").insert({ ...dados, created_by: membro });
+  if (error) return { erro: error.message };
+  atualizarTudo();
+  return {};
+}
+
+export async function excluirCartao(id: string): Promise<Resultado> {
+  await exigirMembro();
+  const { error } = await db().from("cartoes").delete().eq("id", id);
+  if (error) return { erro: error.message };
+  atualizarTudo();
+  return {};
+}
+
+export async function salvarCiclo(fd: FormData): Promise<Resultado> {
+  const membro = await exigirMembro();
+  const sal = numeroOuNull(fd, "dia_salario");
+  const contas = numeroOuNull(fd, "dia_contas");
+  if (!sal || sal < 1 || sal > 31 || !contas || contas < 1 || contas > 31) return { erro: "Use dias entre 1 e 31." };
+  const { error } = await db()
+    .from("familia_info")
+    .update({ dia_salario: sal, dia_contas: contas, updated_by: membro, updated_at: new Date().toISOString() })
+    .eq("id", 1);
+  if (error) return { erro: error.message };
+  atualizarTudo();
+  return {};
 }
 
 // ------------------------------------------------------------------ contas fixas

@@ -104,7 +104,7 @@ function FormConta({ conta, tipo, categorias, onFechar }: { conta: ContaFixa | n
         </div>
         <div>
           <label className="rotulo">{tipo === "receita" ? "Dia que cai" : "Dia do vencimento"}</label>
-          <input name="dia" type="number" min={1} max={31} defaultValue={conta?.dia ?? 5} className="campo" required />
+          <input name="dia" type="number" min={1} max={31} defaultValue={conta?.dia ?? (tipo === "receita" ? 5 : 10)} className="campo" required />
         </div>
         <div>
           <label className="rotulo">Categoria</label>

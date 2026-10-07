@@ -21,6 +21,8 @@ create table familia_info (
   missao text not null default '',
   lema text not null default '',
   horas_acordadas_dia numeric(4,1) not null default 16,
+  dia_salario int not null default 5 check (dia_salario between 1 and 31),
+  dia_contas int not null default 10 check (dia_contas between 1 and 31),
   updated_by text references membros(id),
   updated_at timestamptz not null default now()
 );
@@ -160,12 +162,27 @@ create table contas_fixas (
   created_at timestamptz not null default now()
 );
 
+create table cartoes (
+  id uuid primary key default gen_random_uuid(),
+  nome text not null,
+  dono text not null default 'casal' check (dono in ('madu', 'gabriel', 'casal')),
+  cor text not null default '#e0601a',
+  dia_fechamento int not null check (dia_fechamento between 1 and 31),
+  dia_vencimento int not null check (dia_vencimento between 1 and 31),
+  limite numeric(12,2),
+  ativo boolean not null default true,
+  created_by text references membros(id),
+  created_at timestamptz not null default now()
+);
+
 create table lancamentos (
   id uuid primary key default gen_random_uuid(),
   tipo text not null check (tipo in ('receita', 'despesa')),
   descricao text not null,
   valor numeric(12,2) not null check (valor > 0),
-  data date not null,                 -- vencimento / data do lançamento
+  data date not null,                 -- vencimento / data do lançamento (no cartão: vencimento da fatura)
+  data_compra date,                   -- quando o gasto aconteceu (cartão)
+  cartao_id uuid references cartoes(id) on delete set null,
   competencia char(7) not null,       -- 'YYYY-MM'
   categoria_id uuid references categorias(id) on delete set null,
   natureza text not null default 'variavel' check (natureza in ('fixo', 'variavel')),
@@ -225,6 +242,7 @@ alter table contas_fixas enable row level security;
 alter table lancamentos enable row level security;
 alter table caixinhas enable row level security;
 alter table caixinha_movimentos enable row level security;
+alter table cartoes enable row level security;
 
 -- ============================================================ DADOS INICIAIS
 insert into valores (nome, descricao, escopo, emoji, cor, ordem) values

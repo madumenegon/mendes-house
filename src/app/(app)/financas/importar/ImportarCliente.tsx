@@ -7,7 +7,8 @@ import { FileUp, Loader2, Sparkles } from "lucide-react";
 import { useAcao } from "@/components/useAcao";
 import { FORMAS, moeda } from "@/lib/format";
 import { dataCurta, mesDe } from "@/lib/datas";
-import type { Categoria, Pessoa, TipoLancamento } from "@/lib/types";
+import type { Cartao, Categoria, Pessoa, TipoLancamento } from "@/lib/types";
+import { vencimentoFatura } from "@/lib/cartao";
 import { importarLancamentos, type LinhaImportada } from "../actions";
 
 interface Historico { data: string; valor: number; tipo: TipoLancamento; descricao: string; categoria_id: string | null }
@@ -16,7 +17,15 @@ interface Linha extends LinhaImportada { incluir: boolean; duplicada: boolean }
 const normalizar = (s: string) =>
   s.toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g, "").replace(/\d+/g, "").replace(/\s+/g, " ").trim();
 
-export function ImportarCliente({ categorias, historico, temIA }: { categorias: Categoria[]; historico: Historico[]; temIA: boolean }) {
+export function ImportarCliente({
+  categorias, historico, cartoes, temIA,
+}: { categorias: Categoria[]; historico: Historico[]; cartoes: Cartao[]; temIA: boolean }) {
+  const ativos = cartoes.filter((c) => c.ativo);
+  const [tipoDoc, setTipoDoc] = useState<"extrato" | "fatura">("extrato");
+  const [cartaoId, setCartaoId] = useState(ativos[0]?.id ?? "");
+  const [vencimento, setVencimento] = useState("");
+  const [faturaPaga, setFaturaPaga] = useState(false);
+  const ehFatura = tipoDoc === "fatura" && !!cartaoId;
   const [linhas, setLinhas] = useState<Linha[] | null>(null);
   const [lendo, setLendo] = useState(false);
   const [info, setInfo] = useState<string | null>(null);
@@ -49,7 +58,14 @@ export function ImportarCliente({ categorias, historico, temIA }: { categorias: 
       const resp = await fetch("/api/extrato", { method: "POST", body: fd });
       const json = await resp.json();
       if (!resp.ok) throw new Error(json.erro ?? "Falha ao ler o PDF.");
-      const lidas = json.transacoes as { data: string; descricao: string; valor: number; tipo: TipoLancamento }[];
+      let lidas = json.transacoes as { data: string; descricao: string; valor: number; tipo: TipoLancamento }[];
+      // na fatura em texto, compras vêm sem sinal (seriam lidas como entrada): inverte
+      if (ehFatura && json.metodo === "texto") lidas = lidas.map((t) => ({ ...t, tipo: t.tipo === "receita" ? "despesa" : "receita" }));
+      const cartaoSel = ativos.find((c) => c.id === cartaoId);
+      if (ehFatura && cartaoSel && lidas.length) {
+        const ultima = lidas.map((t) => t.data).sort().at(-1)!;
+        setVencimento(vencimentoFatura(ultima, cartaoSel));
+      }
       if (!lidas.length) {
         setErroLeitura("Não encontrei transações neste PDF. " + (temIA ? "" : "Sem a leitura inteligente (IA), só funciona com extratos em texto no formato “dd/mm descrição valor”."));
         setLinhas(null);
@@ -66,7 +82,8 @@ export function ImportarCliente({ categorias, historico, temIA }: { categorias: 
             natureza: (categoria_id && catMap.get(categoria_id)?.natureza) || "variavel",
             pessoa: pessoaPadrao,
             forma: formaPadrao,
-            incluir: !duplicada,
+            // na fatura, créditos costumam ser o pagamento da fatura anterior: vêm desmarcados
+            incluir: !duplicada && !(ehFatura && t.tipo === "receita"),
             duplicada,
           };
         })
@@ -86,10 +103,53 @@ export function ImportarCliente({ categorias, historico, temIA }: { categorias: 
   const selecionadas = linhas?.filter((l) => l.incluir) ?? [];
   const totalSaidas = selecionadas.filter((l) => l.tipo === "despesa").reduce((s, l) => s + l.valor, 0);
   const totalEntradas = selecionadas.filter((l) => l.tipo === "receita").reduce((s, l) => s + l.valor, 0);
-  const meses = Array.from(new Set(selecionadas.map((l) => mesDe(l.data))));
+  const meses = ehFatura && vencimento ? [mesDe(vencimento)] : Array.from(new Set(selecionadas.map((l) => mesDe(l.data))));
 
   return (
     <div className="space-y-4">
+      <div className="card flex flex-wrap items-end gap-3 p-4">
+        <div>
+          <p className="rotulo">Que PDF é este?</p>
+          <div className="flex rounded-xl bg-casa-bg p-0.5">
+            {([["extrato", "🏦 Extrato da conta"], ["fatura", "💳 Fatura do cartão"]] as const).map(([v, label]) => (
+              <button
+                key={v}
+                type="button"
+                onClick={() => { setTipoDoc(v); setLinhas(null); }}
+                className={clsx("rounded-lg px-3 py-1.5 text-sm font-semibold", tipoDoc === v ? "bg-white shadow-sm" : "text-casa-muted")}
+              >
+                {label}
+              </button>
+            ))}
+          </div>
+        </div>
+        {tipoDoc === "fatura" && (ativos.length === 0 ? (
+          <p className="text-sm text-casa-muted">
+            Cadastre o cartão em <Link href="/financas/cartoes" className="font-bold text-casa-principal underline">💳 Cartões</Link> primeiro.
+          </p>
+        ) : (
+          <>
+            <div className="min-w-44">
+              <label className="rotulo">Cartão</label>
+              <select value={cartaoId} onChange={(e) => setCartaoId(e.target.value)} className="campo">
+                {ativos.map((c) => <option key={c.id} value={c.id}>{c.nome}</option>)}
+              </select>
+            </div>
+            <div>
+              <label className="rotulo">Vencimento da fatura</label>
+              <input type="date" value={vencimento} onChange={(e) => setVencimento(e.target.value)} className="campo" />
+            </div>
+            <label className="flex items-center gap-2 pb-2 text-sm font-semibold">
+              <input type="checkbox" checked={faturaPaga} onChange={(e) => setFaturaPaga(e.target.checked)} className="h-4 w-4 accent-casa-principal" />
+              Já está paga
+            </label>
+            <p className="w-full text-xs text-casa-muted">
+              As compras guardam a data em que foram feitas, mas contam no mês do vencimento (é quando o dinheiro sai). O vencimento é sugerido depois de ler o PDF.
+            </p>
+          </>
+        ))}
+      </div>
+
       <label
         className={clsx(
           "card flex cursor-pointer flex-col items-center justify-center gap-2 border-2 border-dashed p-8 text-center transition hover:border-casa-principal hover:bg-casa-principalclaro/30",
@@ -204,9 +264,9 @@ export function ImportarCliente({ categorias, historico, temIA }: { categorias: 
                   const r = await importarLancamentos(selecionadas.map((l) => ({
                     data: l.data, descricao: l.descricao, valor: l.valor, tipo: l.tipo,
                     categoria_id: l.categoria_id, natureza: l.natureza, pessoa: l.pessoa, forma: l.forma,
-                  })));
+                  })), ehFatura ? { cartao_id: cartaoId, vencimento, pago: faturaPaga } : undefined);
                   if (!r.erro) {
-                    setConcluido(`${r.inseridos} lançamentos importados como pagos/recebidos.`);
+                    setConcluido(ehFatura ? `${r.inseridos} compras importadas na fatura que vence em ${dataCurta(vencimento)}.` : `${r.inseridos} lançamentos importados como pagos/recebidos.`);
                     setLinhas(null);
                   }
                   return r;

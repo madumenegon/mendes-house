@@ -2,7 +2,7 @@ import Link from "next/link";
 import { exigirMembro } from "@/lib/auth";
 import { db } from "@/lib/supabase";
 import {
-  autoGerarSePreciso, carregarCaixinhas, carregarCategorias, carregarEventos, carregarFamilia, carregarFeitas, carregarLancamentos,
+  agruparFaturas, autoGerarSePreciso, carregarCaixinhas, carregarCartoes, carregarCategorias, carregarEventos, carregarFamilia, carregarFeitas, carregarLancamentos,
   carregarTarefas, carregarValores, movimentosDoMes, resumirMes,
 } from "@/lib/dados";
 import { agoraHHMM, dataCurta, dataLonga, hhmm, hojeISO, inicioDaSemana, mesDe, somarDias } from "@/lib/datas";
@@ -12,7 +12,7 @@ import { CORES, moeda } from "@/lib/format";
 import { DonoBadge, Secao, StatTile, Vazio } from "@/components/ui";
 import { CompromissosPessoas } from "@/components/Tempo";
 import { ItemChecklist } from "./casa/TarefasCliente";
-import { BotaoPago } from "./financas/BotaoPago";
+import { BotaoPagarFatura, BotaoPago } from "./financas/BotaoPago";
 
 export default async function InicioPage() {
   const membro = await exigirMembro();
@@ -23,20 +23,27 @@ export default async function InicioPage() {
   await autoGerarSePreciso(mes, membro);
 
   const supa = db();
-  const [familia, valores, eventos, tarefas, feitas, lancs, categorias, { movimentos }, { data: estoque }, { count: naLista }] = await Promise.all([
+  const [familia, valores, eventos, tarefas, feitas, lancs, categorias, { movimentos }, { data: estoque }, { count: naLista }, cartoes] = await Promise.all([
     carregarFamilia(), carregarValores(), carregarEventos(semIni, somarDias(hoje, 7) > semFim ? somarDias(hoje, 7) : semFim), carregarTarefas(),
-    carregarFeitas(semIni, semFim), carregarLancamentos(mes), carregarCategorias(), carregarCaixinhas(),
+    carregarFeitas(semIni, semFim), carregarLancamentos(mes, mesDe(somarDias(hoje, 7))), carregarCategorias(), carregarCaixinhas(),
     supa.from("estoque").select("id, nome, quantidade, minimo, unidade"),
     supa.from("compras").select("id", { count: "exact", head: true }).eq("comprado", false),
+    carregarCartoes(),
   ]);
 
   const resumo = resumirTempo(eventos, tarefas, feitas, valores, semIni, semFim, familia.horas_acordadas_dia);
   const doDia = expandirEventos(eventos, hoje, hoje);
   const amanha = expandirEventos(eventos, somarDias(hoje, 1), somarDias(hoje, 1));
   const tarefasHoje = expandirTarefas(tarefas, feitas, hoje, hoje);
-  const r = resumirMes(lancs, categorias, movimentosDoMes(movimentos, mes));
+  const r = resumirMes(lancs.filter((l) => l.competencia === mes), categorias, movimentosDoMes(movimentos, mes));
   const limite = somarDias(hoje, 7);
-  const vencendo = lancs.filter((l) => !l.pago && l.tipo === "despesa" && l.data <= limite).sort((a, b) => a.data.localeCompare(b.data));
+  const emAberto = lancs.filter((l) => !l.pago && l.tipo === "despesa" && l.data <= limite);
+  const faturas = agruparFaturas(emAberto, cartoes);
+  const naFatura = new Set(faturas.flatMap((f) => f.itens.map((l) => l.id)));
+  const vencendo = [
+    ...emAberto.filter((l) => !naFatura.has(l.id)).map((l) => ({ chave: l.id, titulo: l.descricao, data: l.data, valor: l.valor, lanc: l, fatura: null })),
+    ...faturas.map((f) => ({ chave: f.cartao.id, titulo: `Fatura ${f.cartao.nome}`, data: f.vencimento, valor: f.aPagar, lanc: null, fatura: f })),
+  ].sort((a, b) => a.data.localeCompare(b.data));
   const acabando = (estoque ?? []).filter((i) => Number(i.quantidade) <= Number(i.minimo));
   const valorMap = new Map(valores.map((v) => [v.id, v]));
 
@@ -106,14 +113,18 @@ export default async function InicioPage() {
         <Secao titulo="⏰ Contas dos próximos 7 dias" acao={<Link href="/financas" className="text-xs font-bold text-casa-principal">Finanças →</Link>}>
           {vencendo.length === 0 ? <Vazio icone="🎉">Nenhuma conta vencendo.</Vazio> : (
             <ul className="divide-y divide-casa-line">
-              {vencendo.slice(0, 6).map((l) => (
-                <li key={l.id} className="flex items-center gap-3 py-2">
+              {vencendo.slice(0, 6).map((v) => (
+                <li key={v.chave} className="flex items-center gap-3 py-2">
                   <div className="min-w-0 flex-1">
-                    <p className="truncate font-semibold">{l.descricao}</p>
-                    <p className={`text-xs ${l.data < hoje ? "font-bold text-perigo" : "text-casa-muted"}`}>{l.data < hoje ? "Venceu" : "Vence"} {dataCurta(l.data)}</p>
+                    <p className="truncate font-semibold">{v.fatura ? "💳 " : ""}{v.titulo}</p>
+                    <p className={`text-xs ${v.data < hoje ? "font-bold text-perigo" : "text-casa-muted"}`}>{v.data < hoje ? "Venceu" : "Vence"} {dataCurta(v.data)}</p>
                   </div>
-                  <span className="font-bold tabular-nums">{moeda(l.valor)}</span>
-                  <BotaoPago id={l.id} pago={l.pago} tipo={l.tipo} />
+                  <span className="font-bold tabular-nums">{moeda(v.valor)}</span>
+                  {v.fatura ? (
+                    <BotaoPagarFatura cartaoId={v.fatura.cartao.id} competencia={v.data.slice(0, 7)} pago={false} />
+                  ) : (
+                    v.lanc && <BotaoPago id={v.lanc.id} pago={v.lanc.pago} tipo={v.lanc.tipo} />
+                  )}
                 </li>
               ))}
             </ul>

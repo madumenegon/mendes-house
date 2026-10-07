@@ -7,6 +7,8 @@ export interface FamiliaInfo {
   missao: string;
   lema: string;
   horas_acordadas_dia: number;
+  dia_salario: number;
+  dia_contas: number;
   updated_by: MembroId | null;
   updated_at: string;
 }
@@ -154,7 +156,9 @@ export interface Lancamento {
   tipo: TipoLancamento;
   descricao: string;
   valor: number;
-  data: string;
+  data: string; // vencimento (no cartão: vencimento da fatura)
+  data_compra: string | null; // quando o gasto aconteceu
+  cartao_id: string | null;
   competencia: string;
   categoria_id: string | null;
   natureza: Natureza;
@@ -192,4 +196,16 @@ export interface MovimentoCaixinha {
   descricao: string;
   created_by: MembroId | null;
   created_at: string;
+}
+
+export interface Cartao {
+  id: string;
+  nome: string;
+  dono: Pessoa;
+  cor: string;
+  dia_fechamento: number;
+  dia_vencimento: number;
+  limite: number | null;
+  ativo: boolean;
+  created_by: MembroId | null;
 }

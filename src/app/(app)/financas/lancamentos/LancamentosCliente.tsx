@@ -8,8 +8,9 @@ import { Segmentos } from "@/components/Escolhas";
 import { useAcao } from "@/components/useAcao";
 import { DonoBadge, Vazio } from "@/components/ui";
 import { CORES, FORMAS, NOMES, moeda } from "@/lib/format";
-import { dataLonga } from "@/lib/datas";
-import type { Categoria, Lancamento, MembroId, Natureza, Pessoa, TipoLancamento } from "@/lib/types";
+import { dataCurta, dataLonga, nomeMes } from "@/lib/datas";
+import { vencimentoFatura } from "@/lib/cartao";
+import type { Cartao, Categoria, Lancamento, MembroId, Natureza, Pessoa, TipoLancamento } from "@/lib/types";
 import { excluirLancamento, salvarLancamento } from "../actions";
 import { BotaoPago } from "../BotaoPago";
 
@@ -22,13 +23,14 @@ const PESSOAS: { valor: Pessoa; label: string; cor: string }[] = [
 type Filtro = "todos" | "receita" | "despesa" | "aberto" | "fixo" | "variavel";
 
 export function LancamentosCliente({
-  lancamentos, categorias, membro, dataPadrao,
-}: { lancamentos: Lancamento[]; categorias: Categoria[]; membro: MembroId; dataPadrao: string }) {
+  lancamentos, categorias, cartoes, membro, dataPadrao,
+}: { lancamentos: Lancamento[]; categorias: Categoria[]; cartoes: Cartao[]; membro: MembroId; dataPadrao: string }) {
   const [editar, setEditar] = useState<Lancamento | TipoLancamento | null>(null);
   const [filtro, setFiltro] = useState<Filtro>("todos");
   const [categoria, setCategoria] = useState("");
   const [busca, setBusca] = useState("");
   const catMap = new Map(categorias.map((c) => [c.id, c]));
+  const cartaoMap = new Map(cartoes.map((c) => [c.id, c]));
 
   const lista = lancamentos.filter((l) => {
     if (filtro === "receita" || filtro === "despesa") { if (l.tipo !== filtro) return false; }
@@ -88,7 +90,8 @@ export function LancamentosCliente({
                         <p className="flex flex-wrap items-center gap-1.5 text-xs text-casa-muted">
                           {c?.nome ?? "Sem categoria"}
                           {l.tipo === "despesa" && <span className="rounded bg-casa-bg px-1 text-[10px] font-bold">{l.natureza === "fixo" ? "fixo" : "variável"}</span>}
-                          · {FORMAS[l.forma] ?? l.forma}
+                          · {l.cartao_id && cartaoMap.get(l.cartao_id) ? `💳 ${cartaoMap.get(l.cartao_id)!.nome}` : FORMAS[l.forma] ?? l.forma}
+                          {l.data_compra && l.data_compra !== l.data && <span>· compra {dataCurta(l.data_compra)}</span>}
                           <DonoBadge dono={l.pessoa} pequeno />
                           {l.origem === "extrato" && <span title="Importado do extrato">📄</span>}
                           {l.origem === "recorrente" && <span title="Gerado das contas fixas">📌</span>}
@@ -117,6 +120,7 @@ export function LancamentosCliente({
             lancamento={typeof editar === "string" ? null : editar}
             tipoInicial={typeof editar === "string" ? editar : editar.tipo}
             categorias={categorias}
+            cartoes={cartoes}
             membro={membro}
             dataPadrao={dataPadrao}
             onFechar={() => setEditar(null)}
@@ -128,14 +132,19 @@ export function LancamentosCliente({
 }
 
 function FormLancamento({
-  lancamento, tipoInicial, categorias, membro, dataPadrao, onFechar,
-}: { lancamento: Lancamento | null; tipoInicial: TipoLancamento; categorias: Categoria[]; membro: MembroId; dataPadrao: string; onFechar: () => void }) {
+  lancamento, tipoInicial, categorias, cartoes, membro, dataPadrao, onFechar,
+}: { lancamento: Lancamento | null; tipoInicial: TipoLancamento; categorias: Categoria[]; cartoes: Cartao[]; membro: MembroId; dataPadrao: string; onFechar: () => void }) {
   const l = lancamento;
+  const ativos = cartoes.filter((c) => c.ativo || c.id === l?.cartao_id);
+  const [cartaoId, setCartaoId] = useState(l?.cartao_id ?? ativos[0]?.id ?? "");
+  const [dataInformada, setDataInformada] = useState(l?.data_compra ?? l?.data ?? dataPadrao);
   const [tipo, setTipo] = useState<TipoLancamento>(tipoInicial);
   const [pessoa, setPessoa] = useState<Pessoa>(l?.pessoa ?? (tipoInicial === "receita" ? membro : "casal"));
   const [categoriaId, setCategoriaId] = useState(l?.categoria_id ?? "");
   const [natureza, setNatureza] = useState<Natureza>(l?.natureza ?? "variavel");
   const [forma, setForma] = useState(l?.forma ?? (tipoInicial === "receita" ? "transferencia" : "pix"));
+  const noCartao = tipo === "despesa" && forma === "credito";
+  const cartaoSel = ativos.find((c) => c.id === cartaoId);
   const { pendente, erro, rodar } = useAcao();
   const cats = categorias.filter((c) => c.tipo === tipo);
 
@@ -167,8 +176,8 @@ function FormLancamento({
           <input name="valor" inputMode="decimal" defaultValue={l ? String(l.valor).replace(".", ",") : ""} className="campo text-lg font-bold" required placeholder="0,00" />
         </div>
         <div>
-          <label className="rotulo">{tipo === "receita" ? "Data" : "Vencimento / data"}</label>
-          <input type="date" name="data" defaultValue={l?.data ?? dataPadrao} className="campo" required />
+          <label className="rotulo">{tipo === "receita" ? "Data" : noCartao ? "Data da compra" : "Vencimento / data"}</label>
+          <input type="date" name="data" value={dataInformada} onChange={(e) => setDataInformada(e.target.value)} className="campo" required />
         </div>
       </div>
 
@@ -216,6 +225,29 @@ function FormLancamento({
           </div>
         )}
       </div>
+
+      {noCartao && (
+        <div className="rounded-2xl bg-casa-destaqueclaro p-3">
+          {ativos.length === 0 ? (
+            <p className="text-sm">
+              Cadastre seus cartões na aba <b>💳 Cartões</b> para a compra ir sozinha para a fatura certa. Sem cartão, ela fica na data informada.
+            </p>
+          ) : (
+            <>
+              <label className="rotulo">Qual cartão?</label>
+              <select name="cartao_id" value={cartaoId} onChange={(e) => setCartaoId(e.target.value)} className="campo">
+                {ativos.map((c) => <option key={c.id} value={c.id}>{c.nome} (fecha dia {c.dia_fechamento}, vence dia {c.dia_vencimento})</option>)}
+              </select>
+              {cartaoSel && dataInformada && (
+                <p className="mt-2 text-sm">
+                  💳 Entra na fatura que vence em <b>{dataCurta(vencimentoFatura(dataInformada, cartaoSel))}</b> — conta no mês de{" "}
+                  <b>{nomeMes(vencimentoFatura(dataInformada, cartaoSel).slice(0, 7))}</b>.
+                </p>
+              )}
+            </>
+          )}
+        </div>
+      )}
 
       <div>
         <label className="rotulo">{tipo === "receita" ? "De quem é a receita" : "De quem é o gasto"}</label>

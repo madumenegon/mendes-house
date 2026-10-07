@@ -1,7 +1,8 @@
 import Link from "next/link";
 import { exigirMembro } from "@/lib/auth";
 import {
-  autoGerarSePreciso, carregarCaixinhas, carregarCategorias, carregarLancamentos, carregarResumoTempo, movimentosDoMes, resumirMes, saldoCaixinha,
+  agruparFaturas, autoGerarSePreciso, carregarCaixinhas, carregarCartoes, carregarCategorias, carregarFamilia, carregarLancamentos,
+  carregarResumoTempo, movimentosDoMes, resumirMes, saldoCaixinha,
 } from "@/lib/dados";
 import { dataCurta, hojeISO, inicioDaSemana, inicioDoMes, mesDe, nomeMes, somarDias, somarMeses } from "@/lib/datas";
 import { FORMAS, moeda, pct } from "@/lib/format";
@@ -9,28 +10,38 @@ import { Barra, Cabecalho, DonoBadge, Secao, StatTile, Vazio } from "@/component
 import { TempoDisponivel, TempoPorValor } from "@/components/Tempo";
 import { AbasFinancas, SeletorMes, mesDaUrl } from "./comum";
 import { DonutFixoVariavel, EvolucaoMeses } from "./Graficos";
-import { BotaoPago } from "./BotaoPago";
+import { BotaoPagarFatura, BotaoPago } from "./BotaoPago";
+import { mesConsumo } from "@/lib/cartao";
+import type { Lancamento } from "@/lib/types";
 
 export default async function FinancasPage({ searchParams }: PageProps<"/financas">) {
   const membro = await exigirMembro();
-  const mes = mesDaUrl((await searchParams).mes);
+  const sp = await searchParams;
+  const mes = mesDaUrl(sp.mes);
+  const visao = sp.visao === "consumo" ? "consumo" : "caixa";
   await autoGerarSePreciso(mes, membro);
 
   const mesIni6 = mesDe(somarMeses(inicioDoMes(mes), -5));
+  // no consumo, parcelas de compras deste mês podem cair até 4 anos depois
+  const mesFimBusca = mesDe(somarMeses(inicioDoMes(mes), visao === "consumo" ? 48 : 2));
   const hoje = hojeISO();
   const semIni = inicioDaSemana(hoje);
-  const [lancs6, categorias, { caixinhas, movimentos }, tempo] = await Promise.all([
-    carregarLancamentos(mesIni6, mes),
+  const [lancsTodos, categorias, { caixinhas, movimentos }, tempo, cartoes, familia] = await Promise.all([
+    carregarLancamentos(mesIni6, mesFimBusca),
     carregarCategorias(),
     carregarCaixinhas(),
     carregarResumoTempo(semIni, somarDias(semIni, 6)),
+    carregarCartoes(),
+    carregarFamilia(),
   ]);
-  const lancs = lancs6.filter((l) => l.competencia === mes);
+  // caixa = mês em que o dinheiro entra/sai; consumo = mês em que o gasto aconteceu
+  const mesDoLanc = (l: Lancamento) => (visao === "consumo" ? mesConsumo(l) : l.competencia);
+  const lancs = lancsTodos.filter((l) => mesDoLanc(l) === mes);
   const r = resumirMes(lancs, categorias, movimentosDoMes(movimentos, mes));
 
   const evolucao = Array.from({ length: 6 }, (_, i) => {
     const m = mesDe(somarMeses(inicioDoMes(mesIni6), i));
-    const doMes = lancs6.filter((l) => l.competencia === m);
+    const doMes = lancsTodos.filter((l) => mesDoLanc(l) === m);
     return {
       mes: nomeMes(m, true),
       receitas: doMes.filter((l) => l.tipo === "receita").reduce((s, l) => s + l.valor, 0),
@@ -38,7 +49,21 @@ export default async function FinancasPage({ searchParams }: PageProps<"/financa
     };
   });
 
-  const pendentes = lancs.filter((l) => !l.pago).sort((a, b) => a.data.localeCompare(b.data));
+  // Peso do mês passado: do que sai do caixa neste mês, quanto foi gasto em meses anteriores (cartão)
+  const caixaDoMes = lancsTodos.filter((l) => l.competencia === mes);
+  const receitasCaixa = caixaDoMes.filter((l) => l.tipo === "receita").reduce((s, l) => s + l.valor, 0);
+  const gastoAnterior = caixaDoMes.filter((l) => l.tipo === "despesa" && mesConsumo(l) < mes).reduce((s, l) => s + l.valor, 0);
+  const pesoPassado = pct(gastoAnterior, receitasCaixa);
+  const proxMes = mesDe(somarMeses(inicioDoMes(mes), 1));
+  const jaComprometido = lancsTodos
+    .filter((l) => l.competencia === proxMes && l.tipo === "despesa" && mesConsumo(l) <= mes)
+    .reduce((s, l) => s + l.valor, 0);
+
+  // contas em aberto: compras no cartão aparecem agrupadas como uma fatura
+  const faturas = agruparFaturas(caixaDoMes.filter((l) => !l.pago), cartoes);
+  const pendentes = caixaDoMes.filter((l) => !l.pago && !(l.cartao_id && faturas.some((f) => f.cartao.id === l.cartao_id))).sort((a, b) => a.data.localeCompare(b.data));
+  const nAbertos = pendentes.length + faturas.length;
+  const rCaixa = visao === "caixa" ? r : resumirMes(caixaDoMes, categorias, []);
   const catMap = new Map(categorias.map((c) => [c.id, c]));
   const maxCat = Math.max(1, ...r.porCategoria.map((c) => c.total));
   const ativas = caixinhas.filter((c) => !c.arquivada);
@@ -49,6 +74,58 @@ export default async function FinancasPage({ searchParams }: PageProps<"/financa
     <div>
       <Cabecalho titulo="Finanças" subtitulo="Para onde vai o nosso dinheiro — e o nosso tempo." acao={<SeletorMes mes={mes} base="/financas" />} />
       <AbasFinancas ativo="/financas" mes={mes} />
+
+      <div className="mb-4 flex flex-wrap items-center gap-3">
+        <div className="flex rounded-2xl bg-white p-1 ring-1 ring-casa-line">
+          {([
+            ["caixa", "💵 Caixa", "quando o dinheiro entra e sai"],
+            ["consumo", "🛍️ Consumo", "quando o gasto aconteceu"],
+          ] as const).map(([v, label, dica]) => (
+            <Link
+              key={v}
+              href={`/financas?mes=${mes}${v === "consumo" ? "&visao=consumo" : ""}`}
+              title={dica}
+              className={`rounded-xl px-3 py-1.5 text-sm font-semibold ${visao === v ? "bg-casa-principal text-white" : "text-casa-muted"}`}
+            >
+              {label}
+            </Link>
+          ))}
+        </div>
+        <p className="text-xs text-casa-muted">
+          {visao === "caixa"
+            ? `O que entra e sai em ${nomeMes(mes)} — inclui a fatura do cartão gasta no mês anterior.`
+            : `O que vocês gastaram em ${nomeMes(mes)}, mesmo que o cartão só seja pago depois.`}
+        </p>
+      </div>
+
+      <div className="mb-5 grid gap-3 lg:grid-cols-3">
+        <div className="card p-4 lg:col-span-2" style={{ background: "linear-gradient(135deg, #fbf1cf, #fff 70%)" }}>
+          <div className="flex flex-wrap items-start justify-between gap-3">
+            <div>
+              <p className="text-xs font-bold uppercase tracking-wide text-casa-destaqueescuro">⏮️ Peso do mês passado</p>
+              <p className="mt-1 font-display text-3xl font-semibold tabular-nums">{receitasCaixa > 0 ? `${pesoPassado}%` : "—"}</p>
+              <p className="text-xs text-casa-muted">
+                do que entra em {nomeMes(mes)} paga gastos de meses anteriores ({moeda(gastoAnterior)}, principalmente cartão)
+              </p>
+            </div>
+            <div className="text-right">
+              <p className="text-xs font-bold uppercase tracking-wide text-casa-muted">Já comprometido de {nomeMes(proxMes)}</p>
+              <p className="mt-1 font-display text-2xl font-semibold tabular-nums">{moeda(jaComprometido)}</p>
+              <p className="text-xs text-casa-muted">faturas e parcelas já lançadas</p>
+            </div>
+          </div>
+          <div className="mt-3"><Barra valor={gastoAnterior} total={Math.max(receitasCaixa, gastoAnterior, 1)} cor="#edc45a" alto /></div>
+          <p className="mt-2 text-xs text-casa-muted">Meta: ver essa barra diminuir mês a mês, até o salário do mês pagar só o próprio mês.</p>
+        </div>
+        <div className="card p-4">
+          <p className="text-xs font-bold uppercase tracking-wide text-casa-muted">🔁 Nosso ciclo</p>
+          <ul className="mt-2 space-y-2 text-sm">
+            <li className="flex items-center justify-between"><span>💼 Salários até dia {familia.dia_salario}</span><b className={rCaixa.aReceber > 0 ? "text-alerta" : "text-ok"}>{rCaixa.aReceber > 0 ? `falta ${moeda(rCaixa.aReceber)}` : "recebido ✓"}</b></li>
+            <li className="flex items-center justify-between"><span>🧾 Contas até dia {familia.dia_contas}</span><b className={rCaixa.aPagar > 0 ? "text-alerta" : "text-ok"}>{rCaixa.aPagar > 0 ? `falta ${moeda(rCaixa.aPagar)}` : "tudo pago ✓"}</b></li>
+          </ul>
+          <Link href={`/financas/cartoes?mes=${mes}`} className="mt-3 inline-block text-xs font-bold text-casa-principal">Cartões e faturas →</Link>
+        </div>
+      </div>
 
       <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
         <StatTile rotulo="Receitas" valor={moeda(r.receitas)} icone="💼" cor="#16a34a"
@@ -99,12 +176,29 @@ export default async function FinancasPage({ searchParams }: PageProps<"/financa
       </div>
 
       <div className="mt-5 grid gap-5 lg:grid-cols-3">
-        <Secao titulo={`Contas em aberto (${pendentes.length})`} className="lg:col-span-2"
+        <Secao titulo={`Contas em aberto em ${nomeMes(mes)} (${nAbertos})`} className="lg:col-span-2"
           acao={<Link href={`/financas/lancamentos?mes=${mes}`} className="text-xs font-bold text-casa-principal">Ver todos →</Link>}>
-          {pendentes.length === 0 ? (
+          {nAbertos === 0 ? (
             <Vazio icone="🎉">Tudo pago e recebido neste mês!</Vazio>
           ) : (
             <ul className="divide-y divide-casa-line">
+              {faturas.map((f) => {
+                const vencida = f.vencimento < hoje;
+                return (
+                  <li key={f.cartao.id} className="flex items-center gap-3 py-2">
+                    <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl text-lg text-white" style={{ background: f.cartao.cor }}>💳</span>
+                    <div className="min-w-0 flex-1">
+                      <p className="truncate font-semibold">Fatura {f.cartao.nome}</p>
+                      <p className="text-xs text-casa-muted">
+                        <span className={vencida ? "font-bold text-perigo" : ""}>{vencida ? "venceu " : "vence "}{dataCurta(f.vencimento)}</span>
+                        {" "}· {f.itens.length} compra(s)
+                      </p>
+                    </div>
+                    <span className="font-bold tabular-nums">{moeda(f.aPagar)}</span>
+                    <BotaoPagarFatura cartaoId={f.cartao.id} competencia={mes} pago={false} />
+                  </li>
+                );
+              })}
               {pendentes.slice(0, 10).map((l) => {
                 const c = l.categoria_id ? catMap.get(l.categoria_id) : null;
                 const vencida = l.data < hoje && l.tipo === "despesa";

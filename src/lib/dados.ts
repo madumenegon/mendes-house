@@ -3,7 +3,7 @@ import { db } from "@/lib/supabase";
 import { fimDoMes, hojeISO, inicioDoMes, mesDe, somarMeses, ultimoDiaDoMes } from "@/lib/datas";
 import { resumirTempo } from "@/lib/tempo";
 import type {
-  Caixinha, Categoria, ContaFixa, Evento, FamiliaInfo, Lancamento, MovimentoCaixinha, Tarefa, TarefaFeita, Valor,
+  Caixinha, Cartao, Categoria, ContaFixa, Evento, FamiliaInfo, Lancamento, MovimentoCaixinha, Tarefa, TarefaFeita, Valor,
 } from "@/lib/types";
 
 function falhar(contexto: string, error: { message: string } | null) {
@@ -13,7 +13,12 @@ function falhar(contexto: string, error: { message: string } | null) {
 export async function carregarFamilia(): Promise<FamiliaInfo> {
   const { data, error } = await db().from("familia_info").select("*").eq("id", 1).single();
   falhar("familia_info", error);
-  return { ...(data as FamiliaInfo), horas_acordadas_dia: Number(data!.horas_acordadas_dia) };
+  return {
+    ...(data as FamiliaInfo),
+    horas_acordadas_dia: Number(data!.horas_acordadas_dia),
+    dia_salario: data!.dia_salario ?? 5,
+    dia_contas: data!.dia_contas ?? 10,
+  };
 }
 
 export async function carregarValores(): Promise<Valor[]> {
@@ -212,4 +217,41 @@ export function movimentosDoMes(movs: MovimentoCaixinha[], mes: string) {
   const i = inicioDoMes(mes);
   const f = fimDoMes(mes);
   return movs.filter((m) => m.data >= i && m.data <= f);
+}
+
+export async function carregarCartoes(): Promise<Cartao[]> {
+  const { data, error } = await db().from("cartoes").select("*").order("nome");
+  // antes da migração dos cartões a tabela não existe: segue sem cartões
+  if (error) return [];
+  return num((data ?? []) as Cartao[], ["limite"]);
+}
+
+export interface Fatura {
+  cartao: Cartao;
+  vencimento: string;
+  total: number;
+  aPagar: number;
+  pago: boolean;
+  itens: Lancamento[];
+}
+
+/** Agrupa as compras no cartão de um mês (de pagamento) em faturas. */
+export function agruparFaturas(lancs: Lancamento[], cartoes: Cartao[]): Fatura[] {
+  const porCartao = new Map<string, Fatura>();
+  const cartaoMap = new Map(cartoes.map((c) => [c.id, c]));
+  for (const l of lancs) {
+    if (l.tipo !== "despesa" || !l.cartao_id) continue;
+    const cartao = cartaoMap.get(l.cartao_id);
+    if (!cartao) continue;
+    const f = porCartao.get(cartao.id) ?? { cartao, vencimento: l.data, total: 0, aPagar: 0, pago: true, itens: [] };
+    f.total += l.valor;
+    if (!l.pago) {
+      f.aPagar += l.valor;
+      f.pago = false;
+    }
+    if (l.data < f.vencimento) f.vencimento = l.data;
+    f.itens.push(l);
+    porCartao.set(cartao.id, f);
+  }
+  return [...porCartao.values()].sort((a, b) => a.vencimento.localeCompare(b.vencimento));
 }

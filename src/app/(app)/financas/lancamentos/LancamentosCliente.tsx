@@ -131,7 +131,7 @@ export function LancamentosCliente({
   );
 }
 
-function FormLancamento({
+export function FormLancamento({
   lancamento, tipoInicial, categorias, cartoes, membro, dataPadrao, onFechar,
 }: { lancamento: Lancamento | null; tipoInicial: TipoLancamento; categorias: Categoria[]; cartoes: Cartao[]; membro: MembroId; dataPadrao: string; onFechar: () => void }) {
   const l = lancamento;
@@ -238,7 +238,14 @@ function FormLancamento({
               <select name="cartao_id" value={cartaoId} onChange={(e) => setCartaoId(e.target.value)} className="campo">
                 {ativos.map((c) => <option key={c.id} value={c.id}>{c.nome} (fecha dia {c.dia_fechamento}, vence dia {c.dia_vencimento})</option>)}
               </select>
-              {cartaoSel && dataInformada && (
+              {l && l.cartao_id && (
+                <div className="mt-3">
+                  <label className="rotulo">Vencimento da fatura</label>
+                  <input type="date" name="vencimento_fatura" defaultValue={l.data} className="campo" />
+                  <p className="mt-1 text-xs text-casa-muted">Mude aqui se a compra caiu na fatura errada.</p>
+                </div>
+              )}
+              {!(l && l.cartao_id) && cartaoSel && dataInformada && (
                 <p className="mt-2 text-sm">
                   💳 Entra na fatura que vence em <b>{dataCurta(vencimentoFatura(dataInformada, cartaoSel))}</b> — conta no mês de{" "}
                   <b>{nomeMes(vencimentoFatura(dataInformada, cartaoSel).slice(0, 7))}</b>.

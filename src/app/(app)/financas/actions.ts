@@ -52,7 +52,10 @@ export async function salvarLancamento(fd: FormData): Promise<Resultado> {
 
   if (id) {
     let venc = data;
-    if (cartao) {
+    const vencInformado = texto(fd, "vencimento_fatura");
+    if (cartao && dataValida(vencInformado)) {
+      venc = vencInformado; // corrigido à mão (ex.: fatura importada com vencimento errado)
+    } else if (cartao) {
       // mantém a fatura de uma parcela se compra e cartão não mudaram
       const { data: atual } = await supa.from("lancamentos").select("data, data_compra, cartao_id").eq("id", id).single();
       venc = atual && atual.cartao_id === cartao.id && atual.data_compra === data ? atual.data : vencimentoFatura(data, cartao);
@@ -117,6 +120,37 @@ export async function pagarFatura(cartaoId: string, competencia: string, pago: b
   const { error } = await db()
     .from("lancamentos")
     .update({ pago, pago_em: pago ? hojeISO() : null, pago_por: pago ? membro : null, updated_by: membro })
+    .eq("cartao_id", cartaoId)
+    .eq("competencia", competencia)
+    .eq("tipo", "despesa");
+  if (error) return { erro: error.message };
+  atualizarTudo();
+  return {};
+}
+
+/** Move a fatura inteira (todas as compras do cartão naquele mês) para outro vencimento. */
+export async function moverFatura(cartaoId: string, competencia: string, novoVencimento: string): Promise<Resultado> {
+  const membro = await exigirMembro();
+  if (!mesValido(competencia)) return { erro: "Mês inválido." };
+  if (!dataValida(novoVencimento)) return { erro: "Informe o vencimento correto." };
+  const { error } = await db()
+    .from("lancamentos")
+    .update({ data: novoVencimento, competencia: mesDe(novoVencimento), updated_by: membro })
+    .eq("cartao_id", cartaoId)
+    .eq("competencia", competencia)
+    .eq("tipo", "despesa");
+  if (error) return { erro: error.message };
+  atualizarTudo();
+  return {};
+}
+
+/** Apaga todas as compras de uma fatura (útil para importar de novo). */
+export async function excluirFatura(cartaoId: string, competencia: string): Promise<Resultado> {
+  await exigirMembro();
+  if (!mesValido(competencia)) return { erro: "Mês inválido." };
+  const { error } = await db()
+    .from("lancamentos")
+    .delete()
     .eq("cartao_id", cartaoId)
     .eq("competencia", competencia)
     .eq("tipo", "despesa");

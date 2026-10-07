@@ -1,10 +1,12 @@
 import { agruparFaturas, carregarCartoes, carregarCategorias, carregarFamilia, carregarLancamentos } from "@/lib/dados";
+import { exigirMembro } from "@/lib/auth";
 import { inicioDoMes, mesDe, somarMeses } from "@/lib/datas";
 import { Cabecalho } from "@/components/ui";
 import { AbasFinancas, SeletorMes, mesDaUrl } from "../comum";
 import { CartoesCliente } from "./CartoesCliente";
 
 export default async function CartoesPage({ searchParams }: PageProps<"/financas/cartoes">) {
+  const membro = await exigirMembro();
   const mes = mesDaUrl((await searchParams).mes);
   const proximo = mesDe(somarMeses(inicioDoMes(mes), 1));
   const [cartoes, familia, lancs, categorias] = await Promise.all([
@@ -23,6 +25,7 @@ export default async function CartoesPage({ searchParams }: PageProps<"/financas
         categorias={categorias}
         diaSalario={familia.dia_salario}
         diaContas={familia.dia_contas}
+        membro={membro}
       />
     </div>
   );

@@ -53,21 +53,29 @@ export function ImportarCliente({
     setInfo(null);
     setConcluido(null);
     try {
-      const fd = new FormData();
-      fd.append("arquivo", arquivo);
-      const resp = await fetch("/api/extrato", { method: "POST", body: fd });
-      const json = await resp.json();
-      if (!resp.ok) throw new Error(json.erro ?? "Falha ao ler o PDF.");
-      let lidas = json.transacoes as { data: string; descricao: string; valor: number; tipo: TipoLancamento }[];
-      // na fatura em texto, compras vêm sem sinal (seriam lidas como entrada): inverte
-      if (ehFatura && json.metodo === "texto") lidas = lidas.map((t) => ({ ...t, tipo: t.tipo === "receita" ? "despesa" : "receita" }));
+      let json: { transacoes: { data: string; descricao: string; valor: number; tipo: TipoLancamento }[]; metodo: string; aviso?: string };
+      if (/\.(xlsx|xls|csv)$/i.test(arquivo.name)) {
+        // planilha: lida aqui mesmo no navegador
+        const { lerPlanilha } = await import("@/lib/planilha");
+        json = { ...lerPlanilha(await arquivo.arrayBuffer()), metodo: "planilha" };
+      } else {
+        const fd = new FormData();
+        fd.append("arquivo", arquivo);
+        const resp = await fetch("/api/extrato", { method: "POST", body: fd });
+        json = await resp.json();
+        if (!resp.ok) throw new Error((json as unknown as { erro?: string }).erro ?? "Falha ao ler o arquivo.");
+      }
+      let lidas = json.transacoes;
+      // na fatura, compras vêm positivas (seriam lidas como entrada): inverte
+      const inverter = ehFatura && (json.metodo === "texto" || (json.metodo === "planilha" && !json.aviso));
+      if (inverter) lidas = lidas.map((t) => ({ ...t, tipo: t.tipo === "receita" ? "despesa" : "receita" }));
       const cartaoSel = ativos.find((c) => c.id === cartaoId);
       if (ehFatura && cartaoSel && lidas.length) {
         const ultima = lidas.map((t) => t.data).sort().at(-1)!;
         setVencimento(vencimentoFatura(ultima, cartaoSel));
       }
       if (!lidas.length) {
-        setErroLeitura("Não encontrei transações neste PDF. " + (temIA ? "" : "Sem a leitura inteligente (IA), só funciona com extratos em texto no formato “dd/mm descrição valor”."));
+        setErroLeitura("Não encontrei transações neste arquivo. " + (temIA ? "" : "Sem a leitura inteligente (IA), só funciona com extratos em texto no formato “dd/mm descrição valor”."));
         setLinhas(null);
         return;
       }
@@ -88,7 +96,7 @@ export function ImportarCliente({
           };
         })
       );
-      setInfo(`${lidas.length} transações encontradas (${json.metodo === "ia" ? "leitura inteligente" : "leitura simples"}).${json.aviso ? " " + json.aviso : ""}`);
+      setInfo(`${lidas.length} transações encontradas (${json.metodo === "ia" ? "leitura inteligente" : json.metodo === "planilha" ? "planilha" : "leitura simples"}).${json.aviso ? " " + json.aviso : ""}`);
     } catch (e) {
       setErroLeitura(e instanceof Error ? e.message : "Falha ao ler o PDF.");
     } finally {
@@ -158,11 +166,11 @@ export function ImportarCliente({
         onDragOver={(e) => e.preventDefault()}
         onDrop={(e) => { e.preventDefault(); const f = e.dataTransfer.files[0]; if (f) enviar(f); }}
       >
-        <input type="file" accept="application/pdf" className="sr-only" onChange={(e) => { const f = e.target.files?.[0]; if (f) enviar(f); e.target.value = ""; }} />
+        <input type="file" accept="application/pdf,.pdf,.xlsx,.xls,.csv,image/jpeg,image/png,image/webp" className="sr-only" onChange={(e) => { const f = e.target.files?.[0]; if (f) enviar(f); e.target.value = ""; }} />
         {lendo ? <Loader2 className="animate-spin text-casa-principal" size={36} /> : <FileUp className="text-casa-principal" size={36} />}
-        <p className="font-display text-lg font-semibold">{lendo ? "Lendo o extrato…" : "Clique ou arraste o PDF do extrato / fatura"}</p>
+        <p className="font-display text-lg font-semibold">{lendo ? "Lendo o arquivo…" : "Clique ou arraste o extrato ou a fatura"}</p>
         <p className="flex items-center gap-1 text-xs text-casa-muted">
-          {temIA ? <><Sparkles size={13} className="text-casa-destaqueescuro" /> Leitura inteligente ativada — funciona com qualquer banco.</> : "Leitura simples (extratos em texto). Para qualquer banco, configure a chave da IA."}
+          📄 PDF · 📊 Excel ou CSV · 📷 foto/print{temIA ? <> · <Sparkles size={13} className="text-casa-destaqueescuro" /> leitura inteligente ativada</> : " (fotos precisam da leitura inteligente)"}
         </p>
       </label>
 

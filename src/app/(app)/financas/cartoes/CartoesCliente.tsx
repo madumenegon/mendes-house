@@ -9,10 +9,13 @@ import { useAcao } from "@/components/useAcao";
 import { DonoBadge, Secao, Vazio } from "@/components/ui";
 import { CORES, moeda } from "@/lib/format";
 import { dataCurta, nomeMes } from "@/lib/datas";
-import type { Cartao, Categoria, Pessoa } from "@/lib/types";
+import type { Cartao, Categoria, Lancamento, MembroId, Pessoa } from "@/lib/types";
 import type { Fatura } from "@/lib/dados";
-import { excluirCartao, salvarCartao, salvarCiclo } from "../actions";
+import { excluirCartao, excluirFatura, moverFatura, salvarCartao, salvarCiclo } from "../actions";
+import { FormLancamento } from "../lancamentos/LancamentosCliente";
 import { BotaoPagarFatura } from "../BotaoPago";
+
+type Ctx = { categorias: Categoria[]; cartoes: Cartao[]; membro: MembroId };
 
 interface Props {
   mes: string;
@@ -23,10 +26,12 @@ interface Props {
   categorias: Categoria[];
   diaSalario: number;
   diaContas: number;
+  membro: MembroId;
 }
 
 export function CartoesCliente(p: Props) {
   const [editar, setEditar] = useState<Cartao | "novo" | null>(null);
+  const ctx: Ctx = { categorias: p.categorias, cartoes: p.cartoes, membro: p.membro };
   const totalMes = p.faturasMes.reduce((s, f) => s + f.total, 0);
   const totalProximo = p.faturasProximo.reduce((s, f) => s + f.total, 0);
 
@@ -44,7 +49,7 @@ export function CartoesCliente(p: Props) {
           <p className="text-sm text-casa-muted">Nenhuma fatura vence em {nomeMes(p.mes)}.</p>
         ) : (
           <div className="space-y-3">
-            {p.faturasMes.map((f) => <LinhaFatura key={f.cartao.id} f={f} mes={p.mes} categorias={p.categorias} />)}
+            {p.faturasMes.map((f) => <LinhaFatura key={f.cartao.id} f={f} mes={p.mes} ctx={ctx} />)}
           </div>
         )}
       </Secao>
@@ -56,7 +61,7 @@ export function CartoesCliente(p: Props) {
         >
           <p className="-mt-1 mb-3 text-xs text-casa-muted">É o que já está comprometido do salário do mês que vem.</p>
           <div className="space-y-3">
-            {p.faturasProximo.map((f) => <LinhaFatura key={f.cartao.id} f={f} mes={p.proximo} categorias={p.categorias} />)}
+            {p.faturasProximo.map((f) => <LinhaFatura key={f.cartao.id} f={f} mes={p.proximo} ctx={ctx} />)}
           </div>
         </Secao>
       )}
@@ -107,12 +112,30 @@ export function CartoesCliente(p: Props) {
   );
 }
 
-function LinhaFatura({ f, mes, categorias }: { f: Fatura; mes: string; categorias: Categoria[] }) {
+function LinhaFatura({ f, mes, ctx }: { f: Fatura; mes: string; ctx: Ctx }) {
   const [aberta, setAberta] = useState(false);
-  const catMap = new Map(categorias.map((c) => [c.id, c]));
+  const [editandoFatura, setEditandoFatura] = useState(false);
+  const [editarItem, setEditarItem] = useState<Lancamento | null>(null);
+  const catMap = new Map(ctx.categorias.map((c) => [c.id, c]));
   const itens = [...f.itens].sort((a, b) => (a.data_compra ?? a.data).localeCompare(b.data_compra ?? b.data));
   return (
     <div className="rounded-2xl border border-casa-line">
+      <Modal aberto={editandoFatura} onFechar={() => setEditandoFatura(false)} titulo={`Editar fatura ${f.cartao.nome}`}>
+        {editandoFatura && <FormFatura f={f} mes={mes} onFechar={() => setEditandoFatura(false)} />}
+      </Modal>
+      <Modal aberto={editarItem !== null} onFechar={() => setEditarItem(null)} titulo="Editar compra">
+        {editarItem && (
+          <FormLancamento
+            lancamento={editarItem}
+            tipoInicial={editarItem.tipo}
+            categorias={ctx.categorias}
+            cartoes={ctx.cartoes}
+            membro={ctx.membro}
+            dataPadrao={editarItem.data}
+            onFechar={() => setEditarItem(null)}
+          />
+        )}
+      </Modal>
       <div className="flex flex-wrap items-center gap-3 p-3">
         <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl text-white" style={{ background: f.cartao.cor }}>
           <CreditCard size={18} />
@@ -125,18 +148,24 @@ function LinhaFatura({ f, mes, categorias }: { f: Fatura; mes: string; categoria
         </button>
         <span className="font-bold tabular-nums">{moeda(f.total)}</span>
         <BotaoPagarFatura cartaoId={f.cartao.id} competencia={mes} pago={f.pago} />
+        <button className="btn-fantasma p-2" title="Editar fatura (vencimento, excluir)" onClick={() => setEditandoFatura(true)}>
+          <Pencil size={15} />
+        </button>
       </div>
       {aberta && (
         <ul className="divide-y divide-casa-line border-t border-casa-line px-3">
           {itens.map((l) => {
             const c = l.categoria_id ? catMap.get(l.categoria_id) : null;
             return (
-              <li key={l.id} className="flex items-center gap-2 py-2 text-sm">
-                <span className="w-12 shrink-0 text-xs tabular-nums text-casa-muted">{dataCurta(l.data_compra ?? l.data)}</span>
-                <span>{c?.emoji ?? "💸"}</span>
-                <span className="min-w-0 flex-1 truncate">{l.descricao}</span>
-                <DonoBadge dono={l.pessoa} pequeno />
-                <span className="tabular-nums">{moeda(l.valor)}</span>
+              <li key={l.id}>
+                <button onClick={() => setEditarItem(l)} className="group flex w-full items-center gap-2 py-2 text-left text-sm hover:bg-casa-bg/60" title="Editar esta compra">
+                  <span className="w-12 shrink-0 text-xs tabular-nums text-casa-muted">{dataCurta(l.data_compra ?? l.data)}</span>
+                  <span>{c?.emoji ?? "💸"}</span>
+                  <span className="min-w-0 flex-1 truncate">{l.descricao}</span>
+                  <DonoBadge dono={l.pessoa} pequeno />
+                  <span className="tabular-nums">{moeda(l.valor)}</span>
+                  <Pencil size={12} className="text-casa-muted opacity-0 group-hover:opacity-100" />
+                </button>
               </li>
             );
           })}
@@ -237,3 +266,34 @@ function FormCartao({ cartao, onFechar }: { cartao: Cartao | null; onFechar: () 
   );
 }
 
+
+function FormFatura({ f, mes, onFechar }: { f: Fatura; mes: string; onFechar: () => void }) {
+  const [venc, setVenc] = useState(f.vencimento);
+  const { pendente, erro, rodar } = useAcao();
+  return (
+    <div className="space-y-5">
+      <form action={() => rodar(() => moverFatura(f.cartao.id, mes, venc), onFechar)} className="space-y-3">
+        <div>
+          <label className="rotulo">Vencimento correto da fatura</label>
+          <input type="date" value={venc} onChange={(e) => setVenc(e.target.value)} className="campo" required />
+        </div>
+        <p className="text-xs text-casa-muted">
+          Move as {f.itens.length} compras desta fatura ({moeda(f.total)}) para o novo vencimento. As datas das compras não mudam.
+        </p>
+        <button className="btn-primario w-full" disabled={pendente || venc === f.vencimento}>{pendente ? "Salvando…" : "Mover fatura"}</button>
+      </form>
+      <div className="rounded-2xl bg-perigoclaro p-3">
+        <p className="text-sm font-semibold text-perigo">Lançou errado? Exclua a fatura inteira e importe de novo.</p>
+        <button
+          type="button"
+          className="btn mt-2 bg-perigo text-white"
+          disabled={pendente}
+          onClick={() => confirm(`Excluir as ${f.itens.length} compras da fatura ${f.cartao.nome} (${moeda(f.total)})?`) && rodar(() => excluirFatura(f.cartao.id, mes), onFechar)}
+        >
+          <Trash2 size={15} /> Excluir fatura
+        </button>
+      </div>
+      {erro && <p className="rounded-xl bg-perigoclaro px-3 py-2 text-sm text-perigo">{erro}</p>}
+    </div>
+  );
+}

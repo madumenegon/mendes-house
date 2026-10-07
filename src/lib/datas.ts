@@ -53,10 +53,10 @@ export function diasEntre(a: string, b: string): number {
   return Math.round((paraDate(b).getTime() - paraDate(a).getTime()) / 86400000);
 }
 
-/** Segunda-feira da semana da data. */
+/** Domingo da semana da data (semanas vão de domingo a sábado). */
 export function inicioDaSemana(iso: string): string {
   const dow = diaDaSemana(iso);
-  return somarDias(iso, dow === 0 ? -6 : 1 - dow);
+  return somarDias(iso, -dow);
 }
 
 export function diasDaSemana(inicio: string): string[] {

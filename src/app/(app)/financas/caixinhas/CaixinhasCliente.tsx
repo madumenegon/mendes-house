@@ -5,10 +5,11 @@ import { ArrowDownCircle, ArrowUpCircle, Pencil, Plus, Trash2, X } from "lucide-
 import { Modal } from "@/components/Modal";
 import { SeletorCor, SeletorEmoji, Segmentos } from "@/components/Escolhas";
 import { useAcao } from "@/components/useAcao";
-import { NOMES, moeda, pct } from "@/lib/format";
+import { NOMES, pct } from "@/lib/format";
 import { dataCurta, diasEntre } from "@/lib/datas";
 import type { Caixinha, MovimentoCaixinha } from "@/lib/types";
 import { excluirCaixinha, excluirMovimento, movimentarCaixinha, salvarCaixinha } from "../actions";
+import { Din } from "@/components/Privacidade";
 
 export function CaixinhasCliente({
   caixinhas, movimentos, saldos, hoje,
@@ -57,14 +58,14 @@ export function CaixinhasCliente({
                     <h3 className="font-display text-lg font-semibold leading-tight">{c.nome}</h3>
                     <button className="btn-fantasma -mr-2 -mt-1 p-1.5" onClick={() => setEditar(c)}><Pencil size={14} /></button>
                   </div>
-                  <p className="font-display text-2xl font-semibold tabular-nums" style={{ color: c.cor }}>{moeda(saldo)}</p>
-                  {c.meta && <p className="text-xs text-casa-muted">meta {moeda(c.meta)}{faltam > 0 ? ` · faltam ${moeda(faltam)}` : " · meta batida! 🎉"}</p>}
+                  <p className="font-display text-2xl font-semibold tabular-nums" style={{ color: c.cor }}><Din v={saldo} /></p>
+                  {c.meta && <p className="text-xs text-casa-muted">meta <Din v={c.meta} />{faltam > 0 ? <> · faltam <Din v={faltam} /></> : " · meta batida! 🎉"}</p>}
                 </div>
               </div>
               <div className="space-y-1 px-4 pb-2 text-xs text-casa-muted">
                 {c.descricao && <p>{c.descricao}</p>}
-                {c.prazo && <p>📅 Prazo: {dataCurta(c.prazo)}/{c.prazo.slice(2, 4)}{sugestao ? ` · guardar ~${moeda(sugestao)}/mês` : ""}</p>}
-                {c.aporte_mensal ? <p>🔁 Aporte planejado: {moeda(c.aporte_mensal)}/mês</p> : null}
+                {c.prazo && <p>📅 Prazo: {dataCurta(c.prazo)}/{c.prazo.slice(2, 4)}{sugestao ? <> · guardar ~<Din v={sugestao} />/mês</> : ""}</p>}
+                {c.aporte_mensal ? <p>🔁 Aporte planejado: <Din v={c.aporte_mensal} />/mês</p> : null}
               </div>
               <div className="grid grid-cols-3 border-t border-casa-line">
                 <button className="flex items-center justify-center gap-1 py-2.5 text-sm font-bold text-ok hover:bg-okclaro/50" onClick={() => setMover({ c, tipo: "deposito" })}>
@@ -105,7 +106,7 @@ function Historico({ movimentos }: { movimentos: MovimentoCaixinha[] }) {
             <p className="text-sm font-semibold">{m.descricao || (m.tipo === "deposito" ? "Depósito" : "Resgate")}</p>
             <p className="text-xs text-casa-muted">{dataCurta(m.data)}/{m.data.slice(2, 4)} · por {m.created_by ? NOMES[m.created_by] : "—"}</p>
           </div>
-          <span className={`font-bold tabular-nums ${m.tipo === "deposito" ? "text-ok" : "text-casa-destaqueescuro"}`}>{m.tipo === "deposito" ? "+" : "−"}{moeda(m.valor)}</span>
+          <span className={`font-bold tabular-nums ${m.tipo === "deposito" ? "text-ok" : "text-casa-destaqueescuro"}`}>{m.tipo === "deposito" ? "+" : "−"}<Din v={m.valor} /></span>
           <button className="btn-fantasma p-1" disabled={pendente} onClick={() => confirm("Apagar esta movimentação?") && rodar(() => excluirMovimento(m.id))}><X size={14} /></button>
         </li>
       ))}

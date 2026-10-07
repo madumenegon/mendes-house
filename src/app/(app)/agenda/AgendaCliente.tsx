@@ -345,7 +345,7 @@ function VisaoMes({
   return (
     <div className="card overflow-hidden">
       <div className="grid grid-cols-7 border-b border-casa-line bg-casa-bg/60">
-        {[1, 2, 3, 4, 5, 6, 0].map((d) => (
+        {[0, 1, 2, 3, 4, 5, 6].map((d) => (
           <p key={d} className="py-2 text-center text-[11px] font-bold uppercase text-casa-muted">{DIAS_CURTOS[d]}</p>
         ))}
       </div>

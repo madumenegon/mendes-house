@@ -14,6 +14,7 @@ import type { Fatura } from "@/lib/dados";
 import { excluirCartao, excluirFatura, moverFatura, salvarCartao, salvarCiclo } from "../actions";
 import { FormLancamento } from "../lancamentos/LancamentosCliente";
 import { BotaoPagarFatura } from "../BotaoPago";
+import { Din } from "@/components/Privacidade";
 
 type Ctx = { categorias: Categoria[]; cartoes: Cartao[]; membro: MembroId };
 
@@ -41,7 +42,7 @@ export function CartoesCliente(p: Props) {
 
       <Secao
         titulo={`Faturas de ${nomeMes(p.mes)}`}
-        acao={<span className="text-sm text-casa-muted">Total <b className="text-casa-ink">{moeda(totalMes)}</b></span>}
+        acao={<span className="text-sm text-casa-muted">Total <b className="text-casa-ink"><Din v={totalMes} /></b></span>}
       >
         {p.cartoes.length === 0 ? (
           <Vazio icone="💳">Cadastre os cartões abaixo. As compras no crédito vão sozinhas para a fatura do mês em que vocês pagam.</Vazio>
@@ -57,7 +58,7 @@ export function CartoesCliente(p: Props) {
       {p.faturasProximo.length > 0 && (
         <Secao
           titulo={`Faturas em aberto — vencem em ${nomeMes(p.proximo)}`}
-          acao={<span className="text-sm text-casa-muted">Já acumulado <b className="text-casa-ink">{moeda(totalProximo)}</b></span>}
+          acao={<span className="text-sm text-casa-muted">Já acumulado <b className="text-casa-ink"><Din v={totalProximo} /></b></span>}
         >
           <p className="-mt-1 mb-3 text-xs text-casa-muted">É o que já está comprometido do salário do mês que vem.</p>
           <div className="space-y-3">
@@ -89,7 +90,7 @@ export function CartoesCliente(p: Props) {
                   <p className="mt-0.5 text-xs text-white/85">Melhor dia de compra: {c.dia_fechamento}</p>
                   {c.limite ? (
                     <div className="mt-3">
-                      <div className="mb-1 flex justify-between text-[11px] text-white/90"><span>Fatura aberta {moeda(usado)}</span><span>limite {moeda(c.limite)}</span></div>
+                      <div className="mb-1 flex justify-between text-[11px] text-white/90"><span>Fatura aberta <Din v={usado} /></span><span>limite <Din v={c.limite} /></span></div>
                       <div className="h-1.5 overflow-hidden rounded-full bg-white/25">
                         <div className="h-full rounded-full bg-white" style={{ width: `${Math.min(100, (usado / c.limite) * 100)}%` }} />
                       </div>
@@ -146,7 +147,7 @@ function LinhaFatura({ f, mes, ctx }: { f: Fatura; mes: string; ctx: Ctx }) {
           </p>
           <p className="text-xs text-casa-muted">Vence {dataCurta(f.vencimento)} · {f.itens.length} lançamento(s)</p>
         </button>
-        <span className="font-bold tabular-nums">{moeda(f.total)}</span>
+        <span className="font-bold tabular-nums"><Din v={f.total} /></span>
         <BotaoPagarFatura cartaoId={f.cartao.id} competencia={mes} pago={f.pago} />
         <button className="btn-fantasma p-2" title="Editar fatura (vencimento, excluir)" onClick={() => setEditandoFatura(true)}>
           <Pencil size={15} />
@@ -163,7 +164,7 @@ function LinhaFatura({ f, mes, ctx }: { f: Fatura; mes: string; ctx: Ctx }) {
                   <span>{c?.emoji ?? "💸"}</span>
                   <span className="min-w-0 flex-1 truncate">{l.descricao}</span>
                   <DonoBadge dono={l.pessoa} pequeno />
-                  <span className="tabular-nums">{moeda(l.valor)}</span>
+                  <span className="tabular-nums"><Din v={l.valor} /></span>
                   <Pencil size={12} className="text-casa-muted opacity-0 group-hover:opacity-100" />
                 </button>
               </li>
@@ -278,7 +279,7 @@ function FormFatura({ f, mes, onFechar }: { f: Fatura; mes: string; onFechar: ()
           <input type="date" value={venc} onChange={(e) => setVenc(e.target.value)} className="campo" required />
         </div>
         <p className="text-xs text-casa-muted">
-          Move as {f.itens.length} compras desta fatura ({moeda(f.total)}) para o novo vencimento. As datas das compras não mudam.
+          Move as {f.itens.length} compras desta fatura (<Din v={f.total} />) para o novo vencimento. As datas das compras não mudam.
         </p>
         <button className="btn-primario w-full" disabled={pendente || venc === f.vencimento}>{pendente ? "Salvando…" : "Mover fatura"}</button>
       </form>

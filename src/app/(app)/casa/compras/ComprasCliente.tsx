@@ -6,10 +6,11 @@ import clsx from "clsx";
 import { Check, PackageCheck, Plus, X } from "lucide-react";
 import { useAcao } from "@/components/useAcao";
 import { Barra, Vazio } from "@/components/ui";
-import { NOMES, moeda } from "@/lib/format";
+import { NOMES } from "@/lib/format";
 import type { ItemCompra } from "@/lib/types";
 import { adicionarCompra, alternarComprado, excluirCompra, finalizarCompras } from "../actions";
 import { CATEGORIAS_MERCADO } from "../despensa/DespensaCliente";
+import { Din } from "@/components/Privacidade";
 
 const fmt = (n: number) => n.toLocaleString("pt-BR", { maximumFractionDigits: 2 });
 
@@ -79,7 +80,7 @@ export function ComprasCliente({ itens, sugestoes }: { itens: ItemCompra[]; suge
                       <p className="truncate font-semibold">{i.nome}</p>
                       <p className="text-xs text-casa-muted">
                         {fmt(i.quantidade)} {i.unidade}
-                        {i.preco_estimado ? ` · ${moeda(i.preco_estimado * i.quantidade)}` : ""}
+                        {i.preco_estimado ? <> · <Din v={i.preco_estimado * i.quantidade} /></> : ""}
                         {i.estoque_id && " · 🥫 despensa"}
                         {i.comprado && i.comprado_por && ` · pego por ${NOMES[i.comprado_por]}`}
                       </p>
@@ -98,7 +99,7 @@ export function ComprasCliente({ itens, sugestoes }: { itens: ItemCompra[]; suge
           <p className="rotulo">Progresso da compra</p>
           <p className="font-display text-3xl font-semibold">{comprados}<span className="text-lg text-casa-muted">/{itens.length}</span></p>
           <div className="my-3"><Barra valor={comprados} total={itens.length} cor="#16a34a" alto /></div>
-          {total > 0 && <p className="text-sm text-casa-muted">Estimativa: <b className="text-casa-ink">{moeda(total)}</b></p>}
+          {total > 0 && <p className="text-sm text-casa-muted">Estimativa: <b className="text-casa-ink"><Din v={total} /></b></p>}
           <button
             className="btn-primario mt-4 w-full"
             disabled={pendente || comprados === 0}

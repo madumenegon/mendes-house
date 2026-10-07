@@ -7,12 +7,13 @@ import { Modal } from "@/components/Modal";
 import { Segmentos } from "@/components/Escolhas";
 import { useAcao } from "@/components/useAcao";
 import { DonoBadge, Vazio } from "@/components/ui";
-import { CORES, FORMAS, NOMES, moeda } from "@/lib/format";
+import { CORES, FORMAS, NOMES } from "@/lib/format";
 import { dataCurta, dataLonga, nomeMes } from "@/lib/datas";
 import { vencimentoFatura } from "@/lib/cartao";
 import type { Cartao, Categoria, Lancamento, MembroId, Natureza, Pessoa, TipoLancamento } from "@/lib/types";
 import { excluirLancamento, salvarLancamento } from "../actions";
 import { BotaoPago } from "../BotaoPago";
+import { Din } from "@/components/Privacidade";
 
 const PESSOAS: { valor: Pessoa; label: string; cor: string }[] = [
   { valor: "casal", label: "Casal", cor: CORES.casal },
@@ -68,7 +69,7 @@ export function LancamentosCliente({
           ))}
         </div>
         <p className="text-sm">
-          <span className="font-bold text-ok">+{moeda(entradas)}</span> · <span className="font-bold text-madu">−{moeda(saidas)}</span>
+          <span className="font-bold text-ok">+<Din v={entradas} /></span> · <span className="font-bold text-madu">−<Din v={saidas} /></span>
         </p>
       </div>
 
@@ -98,7 +99,7 @@ export function LancamentosCliente({
                         </p>
                       </div>
                       <span className={clsx("whitespace-nowrap font-bold tabular-nums", l.tipo === "receita" ? "text-ok" : "text-casa-ink")}>
-                        {l.tipo === "receita" ? "+" : "−"}{moeda(l.valor)}
+                        {l.tipo === "receita" ? "+" : "−"}<Din v={l.valor} />
                       </span>
                       <BotaoPago id={l.id} pago={l.pago} tipo={l.tipo} compacto />
                     </li>

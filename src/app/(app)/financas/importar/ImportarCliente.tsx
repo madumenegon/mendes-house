@@ -5,11 +5,12 @@ import Link from "next/link";
 import clsx from "clsx";
 import { FileUp, Loader2, Sparkles } from "lucide-react";
 import { useAcao } from "@/components/useAcao";
-import { FORMAS, moeda } from "@/lib/format";
+import { FORMAS } from "@/lib/format";
 import { dataCurta, mesDe } from "@/lib/datas";
 import type { Cartao, Categoria, Pessoa, TipoLancamento } from "@/lib/types";
 import { vencimentoFatura } from "@/lib/cartao";
 import { importarLancamentos, type LinhaImportada } from "../actions";
+import { Din } from "@/components/Privacidade";
 
 interface Historico { data: string; valor: number; tipo: TipoLancamento; descricao: string; categoria_id: string | null }
 interface Linha extends LinhaImportada { incluir: boolean; duplicada: boolean }
@@ -223,7 +224,7 @@ export function ImportarCliente({
                     </td>
                     <td className={clsx("whitespace-nowrap p-2 text-right font-bold tabular-nums", l.tipo === "receita" ? "text-ok" : "")}>
                       <button type="button" title="Inverter entrada/saída" onClick={() => atualizar(i, { tipo: l.tipo === "receita" ? "despesa" : "receita", categoria_id: null })}>
-                        {l.tipo === "receita" ? "+" : "−"}{moeda(l.valor)}
+                        {l.tipo === "receita" ? "+" : "−"}<Din v={l.valor} />
                       </button>
                     </td>
                     <td className="p-2">
@@ -261,7 +262,7 @@ export function ImportarCliente({
           </div>
           <div className="flex flex-wrap items-center justify-between gap-3 border-t border-casa-line bg-casa-bg/50 p-4">
             <p className="text-sm">
-              <b>{selecionadas.length}</b> selecionadas · <span className="font-bold text-ok">+{moeda(totalEntradas)}</span> · <span className="font-bold text-madu">−{moeda(totalSaidas)}</span>
+              <b>{selecionadas.length}</b> selecionadas · <span className="font-bold text-ok">+<Din v={totalEntradas} /></span> · <span className="font-bold text-madu">−<Din v={totalSaidas} /></span>
             </p>
             {erro && <p className="text-sm text-perigo">{erro}</p>}
             <button

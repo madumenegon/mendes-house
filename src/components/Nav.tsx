@@ -5,6 +5,7 @@ import { usePathname } from "next/navigation";
 import clsx from "clsx";
 import { CalendarHeart, Compass, Home, LogOut, ShoppingBasket, Wallet } from "lucide-react";
 import { sair } from "@/app/entrar/actions";
+import { BotaoOlho } from "@/components/Privacidade";
 import type { MembroId } from "@/lib/types";
 
 const ITENS = [
@@ -49,6 +50,7 @@ export function Nav({ membro }: { membro: MembroId }) {
             <p className="font-bold">{membro === "madu" ? "Madu" : "Gabriel"}</p>
             <p className="text-xs text-casa-muted">{membro === "madu" ? "conectada" : "conectado"}</p>
           </div>
+          <BotaoOlho />
           <form action={sair}>
             <button className="btn-fantasma p-2" title="Sair"><LogOut size={16} /></button>
           </form>
@@ -63,6 +65,7 @@ export function Nav({ membro }: { membro: MembroId }) {
           <span className="font-display text-lg font-semibold">Mendes&apos; House</span>
         </Link>
         <div className="flex items-center gap-1">
+          <BotaoOlho />
           <Avatar membro={membro} />
           <form action={sair}><button className="btn-fantasma p-2" title="Sair"><LogOut size={16} /></button></form>
         </div>

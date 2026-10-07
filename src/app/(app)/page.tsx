@@ -8,11 +8,12 @@ import {
 import { agoraHHMM, dataCurta, dataLonga, hhmm, hojeISO, inicioDaSemana, mesDe, somarDias } from "@/lib/datas";
 import { expandirEventos, expandirTarefas } from "@/lib/recorrencia";
 import { resumirTempo } from "@/lib/tempo";
-import { CORES, moeda } from "@/lib/format";
+import { CORES } from "@/lib/format";
 import { DonoBadge, Secao, StatTile, Vazio } from "@/components/ui";
 import { CompromissosPessoas } from "@/components/Tempo";
 import { ItemChecklist } from "./casa/TarefasCliente";
 import { BotaoPagarFatura, BotaoPago } from "./financas/BotaoPago";
+import { Din } from "@/components/Privacidade";
 
 export default async function InicioPage() {
   const membro = await exigirMembro();
@@ -103,8 +104,8 @@ export default async function InicioPage() {
       </div>
 
       <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
-        <StatTile rotulo="Saldo do mês" valor={moeda(r.saldo)} icone="💰" cor={r.saldo >= 0 ? "#e0601a" : "#dc2626"} destaque />
-        <StatTile rotulo="A pagar no mês" valor={moeda(r.aPagar)} icone="🧾" cor="#e8508a" detalhe={`${moeda(r.pago)} já pagos`} />
+        <StatTile rotulo="Saldo do mês" valor={<Din v={r.saldo} />} icone="💰" cor={r.saldo >= 0 ? "#e0601a" : "#dc2626"} destaque />
+        <StatTile rotulo="A pagar no mês" valor={<Din v={r.aPagar} />} icone="🧾" cor="#e8508a" detalhe={<><Din v={r.pago} /> já pagos</>} />
         <StatTile rotulo="Lista de compras" valor={`${naLista ?? 0} itens`} icone="🛒" cor="#3fa79f" detalhe={<Link href="/casa/compras" className="font-bold underline">abrir lista</Link>} />
         <StatTile rotulo="Acabando em casa" valor={acabando.length} icone="🥫" cor="#d97706" detalhe={<Link href="/casa/despensa" className="font-bold underline">ver despensa</Link>} />
       </div>
@@ -119,7 +120,7 @@ export default async function InicioPage() {
                     <p className="truncate font-semibold">{v.fatura ? "💳 " : ""}{v.titulo}</p>
                     <p className={`text-xs ${v.data < hoje ? "font-bold text-perigo" : "text-casa-muted"}`}>{v.data < hoje ? "Venceu" : "Vence"} {dataCurta(v.data)}</p>
                   </div>
-                  <span className="font-bold tabular-nums">{moeda(v.valor)}</span>
+                  <span className="font-bold tabular-nums"><Din v={v.valor} /></span>
                   {v.fatura ? (
                     <BotaoPagarFatura cartaoId={v.fatura.cartao.id} competencia={v.data.slice(0, 7)} pago={false} />
                   ) : (

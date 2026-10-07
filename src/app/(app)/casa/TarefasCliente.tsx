@@ -30,7 +30,7 @@ const FREQUENCIAS: { valor: Frequencia; label: string }[] = [
 const COMODOS = ["Cozinha", "Sala", "Quarto", "Banheiro", "Lavanderia", "Área externa", "Geral"];
 
 export function descreverFrequencia(t: Tarefa) {
-  const dias = (t.dias_semana ?? []).slice().sort((a, b) => ((a + 6) % 7) - ((b + 6) % 7)).map((d) => DIAS_CURTOS[d]).join(", ");
+  const dias = (t.dias_semana ?? []).slice().sort((a, b) => a - b).map((d) => DIAS_CURTOS[d]).join(", ");
   switch (t.frequencia) {
     case "diaria": return dias ? `Todo dia (${dias})` : "Todo dia";
     case "semanal": return `Toda semana · ${dias}`;
@@ -167,7 +167,7 @@ function FormTarefa({ tarefa, hoje, valores, onFechar }: { tarefa: Tarefa | null
         <div>
           <label className="rotulo">{frequencia === "diaria" ? "Só nestes dias (opcional)" : "Em quais dias"}</label>
           <div className="flex flex-wrap gap-1.5">
-            {[1, 2, 3, 4, 5, 6, 0].map((d) => {
+            {[0, 1, 2, 3, 4, 5, 6].map((d) => {
               const ativo = dias.includes(d);
               return (
                 <label key={d} className={clsx("cursor-pointer rounded-xl border-2 px-2.5 py-1.5 text-xs font-bold", ativo ? "border-casa-principal bg-casa-principalclaro text-casa-principal" : "border-casa-line text-casa-muted")} title={DIAS_LONGOS[d]}>

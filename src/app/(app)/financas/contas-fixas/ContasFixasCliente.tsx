@@ -7,10 +7,11 @@ import { Modal } from "@/components/Modal";
 import { Segmentos } from "@/components/Escolhas";
 import { useAcao } from "@/components/useAcao";
 import { DonoBadge, Secao, Vazio } from "@/components/ui";
-import { CORES, FORMAS, moeda } from "@/lib/format";
+import { CORES, FORMAS } from "@/lib/format";
 import { nomeMes } from "@/lib/datas";
 import type { Categoria, ContaFixa, Pessoa, TipoLancamento } from "@/lib/types";
 import { excluirContaFixa, gerarMes, salvarContaFixa } from "../actions";
+import { Din } from "@/components/Privacidade";
 
 export function ContasFixasCliente({ contas, categorias, mes }: { contas: ContaFixa[]; categorias: Categoria[]; mes: string }) {
   const [editar, setEditar] = useState<ContaFixa | TipoLancamento | null>(null);
@@ -43,7 +44,7 @@ export function ContasFixasCliente({ contas, categorias, mes }: { contas: ContaF
                     <p className="truncate font-semibold">{cat?.emoji} {c.descricao}{!c.ativa && " (pausada)"}</p>
                     <p className="flex items-center gap-1.5 text-xs text-casa-muted">{cat?.nome ?? "Sem categoria"} · {FORMAS[c.forma] ?? c.forma} <DonoBadge dono={c.pessoa} pequeno /></p>
                   </div>
-                  <span className={clsx("font-bold tabular-nums", tipo === "receita" && "text-ok")}>{moeda(c.valor)}</span>
+                  <span className={clsx("font-bold tabular-nums", tipo === "receita" && "text-ok")}><Din v={c.valor} /></span>
                 </li>
               );
             })}

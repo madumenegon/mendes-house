@@ -5,7 +5,7 @@ import {
   carregarResumoTempo, movimentosDoMes, resumirMes, saldoCaixinha,
 } from "@/lib/dados";
 import { dataCurta, hojeISO, inicioDaSemana, inicioDoMes, mesDe, nomeMes, somarDias, somarMeses } from "@/lib/datas";
-import { FORMAS, moeda, pct } from "@/lib/format";
+import { FORMAS, pct } from "@/lib/format";
 import { Barra, Cabecalho, DonoBadge, Secao, StatTile, Vazio } from "@/components/ui";
 import { TempoDisponivel, TempoPorValor } from "@/components/Tempo";
 import { AbasFinancas, SeletorMes, mesDaUrl } from "./comum";
@@ -13,6 +13,7 @@ import { DonutFixoVariavel, EvolucaoMeses } from "./Graficos";
 import { BotaoPagarFatura, BotaoPago } from "./BotaoPago";
 import { mesConsumo } from "@/lib/cartao";
 import type { Lancamento } from "@/lib/types";
+import { Din } from "@/components/Privacidade";
 
 export default async function FinancasPage({ searchParams }: PageProps<"/financas">) {
   const membro = await exigirMembro();
@@ -105,12 +106,12 @@ export default async function FinancasPage({ searchParams }: PageProps<"/financa
               <p className="text-xs font-bold uppercase tracking-wide text-casa-destaqueescuro">⏮️ Peso do mês passado</p>
               <p className="mt-1 font-display text-3xl font-semibold tabular-nums">{receitasCaixa > 0 ? `${pesoPassado}%` : "—"}</p>
               <p className="text-xs text-casa-muted">
-                do que entra em {nomeMes(mes)} paga gastos de meses anteriores ({moeda(gastoAnterior)}, principalmente cartão)
+                do que entra em {nomeMes(mes)} paga gastos de meses anteriores (<Din v={gastoAnterior} />, principalmente cartão)
               </p>
             </div>
             <div className="text-right">
               <p className="text-xs font-bold uppercase tracking-wide text-casa-muted">Já comprometido de {nomeMes(proxMes)}</p>
-              <p className="mt-1 font-display text-2xl font-semibold tabular-nums">{moeda(jaComprometido)}</p>
+              <p className="mt-1 font-display text-2xl font-semibold tabular-nums"><Din v={jaComprometido} /></p>
               <p className="text-xs text-casa-muted">faturas e parcelas já lançadas</p>
             </div>
           </div>
@@ -120,22 +121,22 @@ export default async function FinancasPage({ searchParams }: PageProps<"/financa
         <div className="card p-4">
           <p className="text-xs font-bold uppercase tracking-wide text-casa-muted">🔁 Nosso ciclo</p>
           <ul className="mt-2 space-y-2 text-sm">
-            <li className="flex items-center justify-between"><span>💼 Salários até dia {familia.dia_salario}</span><b className={rCaixa.aReceber > 0 ? "text-alerta" : "text-ok"}>{rCaixa.aReceber > 0 ? `falta ${moeda(rCaixa.aReceber)}` : "recebido ✓"}</b></li>
-            <li className="flex items-center justify-between"><span>🧾 Contas até dia {familia.dia_contas}</span><b className={rCaixa.aPagar > 0 ? "text-alerta" : "text-ok"}>{rCaixa.aPagar > 0 ? `falta ${moeda(rCaixa.aPagar)}` : "tudo pago ✓"}</b></li>
+            <li className="flex items-center justify-between"><span>💼 Salários até dia {familia.dia_salario}</span><b className={rCaixa.aReceber > 0 ? "text-alerta" : "text-ok"}>{rCaixa.aReceber > 0 ? <>falta <Din v={rCaixa.aReceber} /></> : "recebido ✓"}</b></li>
+            <li className="flex items-center justify-between"><span>🧾 Contas até dia {familia.dia_contas}</span><b className={rCaixa.aPagar > 0 ? "text-alerta" : "text-ok"}>{rCaixa.aPagar > 0 ? <>falta <Din v={rCaixa.aPagar} /></> : "tudo pago ✓"}</b></li>
           </ul>
           <Link href={`/financas/cartoes?mes=${mes}`} className="mt-3 inline-block text-xs font-bold text-casa-principal">Cartões e faturas →</Link>
         </div>
       </div>
 
       <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
-        <StatTile rotulo="Receitas" valor={moeda(r.receitas)} icone="💼" cor="#16a34a"
-          detalhe={<>Salários/rendas {moeda(salarios)} · Vales {moeda(r.valeRecebido)}</>} />
-        <StatTile rotulo="Despesas" valor={moeda(r.despesas)} icone="🧾" cor="#e8508a"
-          detalhe={<>{moeda(r.pago)} pagos · {moeda(r.aPagar)} a pagar</>} />
-        <StatTile rotulo="Saldo do mês" valor={moeda(r.saldo)} icone={r.saldo >= 0 ? "😊" : "😬"} cor={r.saldo >= 0 ? "#e0601a" : "#dc2626"} destaque
+        <StatTile rotulo="Receitas" valor={<Din v={r.receitas} />} icone="💼" cor="#16a34a"
+          detalhe={<>Salários/rendas <Din v={salarios} /> · Vales <Din v={r.valeRecebido} /></>} />
+        <StatTile rotulo="Despesas" valor={<Din v={r.despesas} />} icone="🧾" cor="#e8508a"
+          detalhe={<><Din v={r.pago} /> pagos · <Din v={r.aPagar} /> a pagar</>} />
+        <StatTile rotulo="Saldo do mês" valor={<Din v={r.saldo} />} icone={r.saldo >= 0 ? "😊" : "😬"} cor={r.saldo >= 0 ? "#e0601a" : "#dc2626"} destaque
           detalhe={r.receitas > 0 ? <>Gastamos {pct(r.despesas, r.receitas)}% do que entrou</> : "Lance as receitas do mês"} />
-        <StatTile rotulo="Livre após caixinhas" valor={moeda(r.livre)} icone="🐷" cor="#0ea5e9"
-          detalhe={<>Guardado no mês: {moeda(r.depositos - r.retiradas)}</>} />
+        <StatTile rotulo="Livre após caixinhas" valor={<Din v={r.livre} />} icone="🐷" cor="#0ea5e9"
+          detalhe={<>Guardado no mês: <Din v={r.depositos - r.retiradas} /></>} />
       </div>
 
       <div className="mt-5 grid gap-5 lg:grid-cols-3">
@@ -159,10 +160,10 @@ export default async function FinancasPage({ searchParams }: PageProps<"/financa
                         <span className="rounded-full bg-casa-bg px-1.5 text-[10px] font-bold text-casa-muted">{c.natureza === "fixo" ? "fixo" : "variável"}</span>
                       </span>
                       <span className="tabular-nums">
-                        <b>{moeda(c.total)}</b>
+                        <b><Din v={c.total} /></b>
                         <span className="text-casa-muted"> · {pct(c.total, r.despesas)}%</span>
                         {c.orcamento !== null && (
-                          <span className={estourou ? "font-bold text-perigo" : "text-casa-muted"}> / {moeda(c.orcamento)}</span>
+                          <span className={estourou ? "font-bold text-perigo" : "text-casa-muted"}> / <Din v={c.orcamento} /></span>
                         )}
                       </span>
                     </div>
@@ -194,7 +195,7 @@ export default async function FinancasPage({ searchParams }: PageProps<"/financa
                         {" "}· {f.itens.length} compra(s)
                       </p>
                     </div>
-                    <span className="font-bold tabular-nums">{moeda(f.aPagar)}</span>
+                    <span className="font-bold tabular-nums"><Din v={f.aPagar} /></span>
                     <BotaoPagarFatura cartaoId={f.cartao.id} competencia={mes} pago={false} />
                   </li>
                 );
@@ -212,7 +213,7 @@ export default async function FinancasPage({ searchParams }: PageProps<"/financa
                         · {FORMAS[l.forma] ?? l.forma} <DonoBadge dono={l.pessoa} pequeno />
                       </p>
                     </div>
-                    <span className={`font-bold tabular-nums ${l.tipo === "receita" ? "text-ok" : ""}`}>{l.tipo === "receita" ? "+" : ""}{moeda(l.valor)}</span>
+                    <span className={`font-bold tabular-nums ${l.tipo === "receita" ? "text-ok" : ""}`}>{l.tipo === "receita" ? "+" : ""}<Din v={l.valor} /></span>
                     <BotaoPago id={l.id} pago={l.pago} tipo={l.tipo} />
                   </li>
                 );
@@ -224,22 +225,22 @@ export default async function FinancasPage({ searchParams }: PageProps<"/financa
         <div className="space-y-5">
           <Secao titulo="Vale alimentação/refeição">
             <div className="grid grid-cols-3 gap-2 text-center">
-              <div><p className="text-[11px] font-bold uppercase text-casa-muted">Recebido</p><p className="font-display text-lg font-semibold">{moeda(r.valeRecebido)}</p></div>
-              <div><p className="text-[11px] font-bold uppercase text-casa-muted">Usado</p><p className="font-display text-lg font-semibold">{moeda(r.valeGasto)}</p></div>
-              <div><p className="text-[11px] font-bold uppercase text-casa-muted">Sobra</p><p className={`font-display text-lg font-semibold ${r.valeRecebido - r.valeGasto < 0 ? "text-perigo" : "text-ok"}`}>{moeda(r.valeRecebido - r.valeGasto)}</p></div>
+              <div><p className="text-[11px] font-bold uppercase text-casa-muted">Recebido</p><p className="font-display text-lg font-semibold"><Din v={r.valeRecebido} /></p></div>
+              <div><p className="text-[11px] font-bold uppercase text-casa-muted">Usado</p><p className="font-display text-lg font-semibold"><Din v={r.valeGasto} /></p></div>
+              <div><p className="text-[11px] font-bold uppercase text-casa-muted">Sobra</p><p className={`font-display text-lg font-semibold ${r.valeRecebido - r.valeGasto < 0 ? "text-perigo" : "text-ok"}`}><Din v={r.valeRecebido - r.valeGasto} /></p></div>
             </div>
             <div className="mt-3"><Barra valor={r.valeGasto} total={Math.max(r.valeRecebido, r.valeGasto)} cor="#65a30d" alto /></div>
             <p className="mt-2 text-xs text-casa-muted">Lance gastos pagos com o vale usando a forma “Vale (VA/VR)”.</p>
           </Secao>
 
           <Secao titulo="Caixinhas" acao={<Link href={`/financas/caixinhas?mes=${mes}`} className="text-xs font-bold text-casa-principal">Abrir →</Link>}>
-            <p className="mb-3 font-display text-2xl font-semibold">{moeda(totalGuardado)} <span className="font-sans text-xs font-semibold text-casa-muted">guardados</span></p>
+            <p className="mb-3 font-display text-2xl font-semibold"><Din v={totalGuardado} /> <span className="font-sans text-xs font-semibold text-casa-muted">guardados</span></p>
             <ul className="space-y-2.5">
               {ativas.slice(0, 4).map((c) => {
                 const saldo = saldoCaixinha(c.id, movimentos);
                 return (
                   <li key={c.id}>
-                    <div className="mb-1 flex justify-between text-sm"><span className="font-semibold">{c.emoji} {c.nome}</span><span className="tabular-nums">{moeda(saldo)}{c.meta ? <span className="text-casa-muted"> / {moeda(c.meta)}</span> : null}</span></div>
+                    <div className="mb-1 flex justify-between text-sm"><span className="font-semibold">{c.emoji} {c.nome}</span><span className="tabular-nums"><Din v={saldo} />{c.meta ? <span className="text-casa-muted"> / <Din v={c.meta} /></span> : null}</span></div>
                     {c.meta ? <Barra valor={saldo} total={c.meta} cor={c.cor} /> : null}
                   </li>
                 );

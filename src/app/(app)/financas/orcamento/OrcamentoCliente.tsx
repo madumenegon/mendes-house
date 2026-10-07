@@ -7,15 +7,17 @@ import { Modal } from "@/components/Modal";
 import { SeletorCor, SeletorEmoji, Segmentos } from "@/components/Escolhas";
 import { useAcao } from "@/components/useAcao";
 import { Barra, Secao } from "@/components/ui";
-import { moeda, parseValor, pct } from "@/lib/format";
+import { parseValor, pct } from "@/lib/format";
 import { nomeMes } from "@/lib/datas";
 import type { Caixinha, Categoria, Natureza, TipoLancamento } from "@/lib/types";
 import { excluirCategoria, salvarCategoria, salvarOrcamento } from "../actions";
+import { Din, useMoeda } from "@/components/Privacidade";
 
 export function OrcamentoCliente({
   mes, categorias, gasto, renda, caixinhas,
 }: { mes: string; categorias: Categoria[]; gasto: Record<string, number>; renda: number; caixinhas: Caixinha[] }) {
   const [editar, setEditar] = useState<Categoria | TipoLancamento | null>(null);
+  const fmt = useMoeda();
   const despesas = categorias.filter((c) => c.tipo === "despesa");
   const receitas = categorias.filter((c) => c.tipo === "receita");
   const comLimite = despesas.filter((c) => c.orcamento_mensal);
@@ -34,20 +36,20 @@ export function OrcamentoCliente({
     <div className="space-y-5">
       <Secao titulo="🎯 Destinação da renda">
         <div className="grid gap-3 sm:grid-cols-3">
-          <div><p className="rotulo">Renda do mês</p><p className="font-display text-2xl font-semibold">{moeda(renda)}</p></div>
-          <div><p className="rotulo">Já destinado</p><p className="font-display text-2xl font-semibold">{moeda(destinado)} <span className="text-sm text-casa-muted">({pct(destinado, renda)}%)</span></p></div>
-          <div><p className="rotulo">{livre >= 0 ? "Sem destino ainda" : "Passou da renda"}</p><p className={`font-display text-2xl font-semibold ${livre < 0 ? "text-perigo" : "text-ok"}`}>{moeda(Math.abs(livre))}</p></div>
+          <div><p className="rotulo">Renda do mês</p><p className="font-display text-2xl font-semibold"><Din v={renda} /></p></div>
+          <div><p className="rotulo">Já destinado</p><p className="font-display text-2xl font-semibold"><Din v={destinado} /> <span className="text-sm text-casa-muted">({pct(destinado, renda)}%)</span></p></div>
+          <div><p className="rotulo">{livre >= 0 ? "Sem destino ainda" : "Passou da renda"}</p><p className={`font-display text-2xl font-semibold ${livre < 0 ? "text-perigo" : "text-ok"}`}><Din v={Math.abs(livre)} /></p></div>
         </div>
         <div className="mt-4 flex h-6 w-full overflow-hidden rounded-full bg-black/[0.06]">
           {segmentos.map((s) => (
-            <div key={s.nome} className="h-full border-r-2 border-white last:border-r-0" style={{ width: `${(s.valor / base) * 100}%`, background: s.cor }} title={`${s.nome}: ${moeda(s.valor)}`} />
+            <div key={s.nome} className="h-full border-r-2 border-white last:border-r-0" style={{ width: `${(s.valor / base) * 100}%`, background: s.cor }} title={`${s.nome}: ${fmt(s.valor)}`} />
           ))}
         </div>
         <ul className="mt-3 flex flex-wrap gap-x-3 gap-y-1 text-xs text-casa-muted">
           {segmentos.map((s) => (
-            <li key={s.nome} className="flex items-center gap-1"><span className="h-2.5 w-2.5 rounded-full" style={{ background: s.cor }} />{s.nome} {moeda(s.valor)}</li>
+            <li key={s.nome} className="flex items-center gap-1"><span className="h-2.5 w-2.5 rounded-full" style={{ background: s.cor }} />{s.nome} <Din v={s.valor} /></li>
           ))}
-          {livre > 0 && <li className="flex items-center gap-1"><span className="h-2.5 w-2.5 rounded-full bg-black/10" />Livre {moeda(livre)}</li>}
+          {livre > 0 && <li className="flex items-center gap-1"><span className="h-2.5 w-2.5 rounded-full bg-black/10" />Livre <Din v={livre} /></li>}
         </ul>
         <p className="mt-3 text-xs text-casa-muted">
           Defina um limite para cada categoria abaixo e um aporte mensal em cada <Link href={`/financas/caixinhas?mes=${mes}`} className="font-bold text-casa-principal underline">caixinha</Link>. Renda considerada: receitas lançadas em {nomeMes(mes)} (ou as entradas fixas, o que for maior).
@@ -110,8 +112,8 @@ function LinhaCategoria({ c, gasto, onEditar }: { c: Categoria; gasto: number; o
       </div>
       <div className="order-4 col-span-2 sm:order-none sm:col-span-1">
         <div className="mb-1 flex justify-between text-xs">
-          <span className={estourou ? "font-bold text-perigo" : "text-casa-muted"}>{moeda(gasto)} gastos</span>
-          {limite !== null && <span className={estourou ? "font-bold text-perigo" : "text-casa-muted"}>{estourou ? `${moeda(gasto - limite)} acima` : `${moeda(limite - gasto)} restantes`}</span>}
+          <span className={estourou ? "font-bold text-perigo" : "text-casa-muted"}><Din v={gasto} /> gastos</span>
+          {limite !== null && <span className={estourou ? "font-bold text-perigo" : "text-casa-muted"}>{estourou ? <><Din v={gasto - limite} /> acima</> : <><Din v={limite - gasto} /> restantes</>}</span>}
         </div>
         <Barra valor={gasto} total={limite ?? Math.max(gasto, 1)} cor={estourou ? "#dc2626" : limite !== null && gasto / limite > 0.8 ? "#d97706" : c.cor} />
       </div>

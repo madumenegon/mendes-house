@@ -1,4 +1,4 @@
-import { carregarCaixinhas, carregarCategorias, carregarContasFixas, carregarLancamentos } from "@/lib/dados";
+import { carregarCaixinhas, carregarCategorias, carregarContasFixas, carregarLancamentos, ehVale, rendaBase } from "@/lib/dados";
 import { Cabecalho } from "@/components/ui";
 import { AbasFinancas, mesDaUrl } from "../comum";
 import { OrcamentoCliente } from "./OrcamentoCliente";
@@ -8,10 +8,9 @@ export default async function OrcamentoPage({ searchParams }: PageProps<"/financ
   const [categorias, lancs, { caixinhas }, contas] = await Promise.all([
     carregarCategorias(), carregarLancamentos(mes), carregarCaixinhas(), carregarContasFixas(),
   ]);
+  // gastos gerais: sem o que foi pago com vale (o vale tem controle próprio)
   const gasto: Record<string, number> = {};
-  for (const l of lancs) if (l.tipo === "despesa" && l.categoria_id) gasto[l.categoria_id] = (gasto[l.categoria_id] ?? 0) + l.valor;
-  const receitasMes = lancs.filter((l) => l.tipo === "receita").reduce((s, l) => s + l.valor, 0);
-  const receitasFixas = contas.filter((c) => c.ativa && c.tipo === "receita").reduce((s, c) => s + c.valor, 0);
+  for (const l of lancs) if (l.tipo === "despesa" && !ehVale(l) && l.categoria_id) gasto[l.categoria_id] = (gasto[l.categoria_id] ?? 0) + l.valor;
 
   return (
     <div>
@@ -21,7 +20,7 @@ export default async function OrcamentoPage({ searchParams }: PageProps<"/financ
         mes={mes}
         categorias={categorias}
         gasto={gasto}
-        renda={Math.max(receitasMes, receitasFixas)}
+        renda={rendaBase(lancs, contas)}
         caixinhas={caixinhas.filter((c) => !c.arquivada)}
       />
     </div>

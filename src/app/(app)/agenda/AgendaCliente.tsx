@@ -10,7 +10,7 @@ import { useAcao } from "@/components/useAcao";
 import { DonoBadge } from "@/components/ui";
 import { CORES, NOMES, horas } from "@/lib/format";
 import {
-  DIAS_CURTOS, dataCurta, dataLonga, diaDaSemana, duracaoMin, hhmm, minutosDoDia, nomeMes, somarDias, somarMeses,
+  DIAS_CURTOS, DIAS_LONGOS, dataCurta, dataLonga, diaDaSemana, duracaoMin, hhmm, minutosDoDia, nomeMes, somarDias, somarMeses,
 } from "@/lib/datas";
 import type { Dono, Evento, MembroId, Ocorrencia, OcorrenciaTarefa, Recorrencia, Valor } from "@/lib/types";
 import { excluirEvento, salvarEvento } from "./actions";
@@ -31,8 +31,8 @@ const DONOS: { valor: Dono; label: string; cor: string }[] = [
 const REPETICOES: { valor: Recorrencia; label: string }[] = [
   { valor: "nenhuma", label: "Não repete" },
   { valor: "diaria", label: "Todo dia" },
-  { valor: "semanal", label: "Toda semana" },
-  { valor: "quinzenal", label: "A cada 2 semanas" },
+  { valor: "semanal", label: "Toda semana (escolher dias)" },
+  { valor: "quinzenal", label: "A cada 2 semanas (escolher dias)" },
   { valor: "mensal", label: "Todo mês" },
 ];
 
@@ -440,6 +440,10 @@ function FormEvento({ edicao, membro, valores, onFechar }: { edicao: Edicao; mem
   const [corManual, setCorManual] = useState(!!ev?.cor);
   const [diaInteiro, setDiaInteiro] = useState(ev?.dia_inteiro ?? false);
   const [recorrencia, setRecorrencia] = useState<Recorrencia>(ev?.recorrencia ?? "nenhuma");
+  const [dataEv, setDataEv] = useState(ev?.data ?? edicao.data);
+  const [dias, setDias] = useState<number[] | null>(ev?.dias_semana?.length ? ev.dias_semana : null);
+  // sem escolha explícita, vale o dia da semana da data do compromisso
+  const diasEscolhidos = dias ?? [diaDaSemana(dataEv)];
   const [valorId, setValorId] = useState(ev?.valor_id ?? "");
   const [confirmarExclusao, setConfirmarExclusao] = useState(false);
   const { pendente, erro, rodar } = useAcao();
@@ -494,7 +498,7 @@ function FormEvento({ edicao, membro, valores, onFechar }: { edicao: Edicao; mem
       <div className="grid grid-cols-2 gap-3">
         <div className="col-span-2 sm:col-span-1">
           <label className="rotulo">Data</label>
-          <input type="date" name="data" defaultValue={ev?.data ?? edicao.data} className="campo" required />
+          <input type="date" name="data" value={dataEv} onChange={(e) => setDataEv(e.target.value)} className="campo" required />
         </div>
         <label className="col-span-2 flex items-center gap-2 self-end pb-2 text-sm font-semibold sm:col-span-1">
           <input type="checkbox" name="dia_inteiro" checked={diaInteiro} onChange={(e) => setDiaInteiro(e.target.checked)} className="h-4 w-4 accent-casa-principal" />
@@ -528,6 +532,40 @@ function FormEvento({ edicao, membro, valores, onFechar }: { edicao: Edicao; mem
           </div>
         )}
       </div>
+
+      {(recorrencia === "semanal" || recorrencia === "quinzenal") && (
+        <div>
+          <label className="rotulo">Em quais dias da semana?</label>
+          <div className="flex flex-wrap gap-1.5">
+            {[0, 1, 2, 3, 4, 5, 6].map((d) => {
+              const ativo = diasEscolhidos.includes(d);
+              return (
+                <label
+                  key={d}
+                  title={DIAS_LONGOS[d]}
+                  className={clsx(
+                    "cursor-pointer rounded-xl border-2 px-2.5 py-1.5 text-xs font-bold transition",
+                    ativo ? "border-casa-principal bg-casa-principalclaro text-casa-principal" : "border-casa-line text-casa-muted"
+                  )}
+                >
+                  <input
+                    type="checkbox" name="dias_semana" value={d} checked={ativo} className="sr-only"
+                    onChange={() => setDias(ativo ? diasEscolhidos.filter((x) => x !== d) : [...diasEscolhidos, d])}
+                  />
+                  {DIAS_CURTOS[d]}
+                </label>
+              );
+            })}
+          </div>
+          <p className="mt-1 text-xs text-casa-muted">
+            {recorrencia === "quinzenal" ? "A cada 2 semanas: " : "Toda semana: "}
+            {diasEscolhidos.length
+              ? [...diasEscolhidos].sort().map((d) => `${DIAS_LONGOS[d]}s`).join(", ").replace(/, ([^,]*)$/, " e $1")
+              : "escolha pelo menos um dia"}
+            {" "}— a partir da data acima.
+          </p>
+        </div>
+      )}
 
       <div>
         <label className="rotulo">Cor</label>

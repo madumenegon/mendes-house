@@ -1,7 +1,8 @@
 import Link from "next/link";
 import { exigirMembro } from "@/lib/auth";
 import {
-  agruparFaturas, autoGerarSePreciso, carregarCaixinhas, carregarCartoes, carregarCategorias, carregarFamilia, carregarLancamentos,
+  agruparFaturas, autoGerarSePreciso, carregarCaixinhas, carregarCartoes, carregarCategorias, carregarContasFixas, carregarFamilia, carregarLancamentos,
+  ehVale, rendaBase,
   carregarResumoTempo, movimentosDoMes, resumirMes, saldoCaixinha,
 } from "@/lib/dados";
 import { dataCurta, hojeISO, inicioDaSemana, inicioDoMes, mesDe, nomeMes, somarDias, somarMeses } from "@/lib/datas";
@@ -27,22 +28,24 @@ export default async function FinancasPage({ searchParams }: PageProps<"/financa
   const mesFimBusca = mesDe(somarMeses(inicioDoMes(mes), visao === "consumo" ? 48 : 2));
   const hoje = hojeISO();
   const semIni = inicioDaSemana(hoje);
-  const [lancsTodos, categorias, { caixinhas, movimentos }, tempo, cartoes, familia] = await Promise.all([
+  const [lancsTodos, categorias, { caixinhas, movimentos }, tempo, cartoes, familia, contasFixas] = await Promise.all([
     carregarLancamentos(mesIni6, mesFimBusca),
     carregarCategorias(),
     carregarCaixinhas(),
     carregarResumoTempo(semIni, somarDias(semIni, 6)),
     carregarCartoes(),
     carregarFamilia(),
+    carregarContasFixas(),
   ]);
   // caixa = mês em que o dinheiro entra/sai; consumo = mês em que o gasto aconteceu
   const mesDoLanc = (l: Lancamento) => (visao === "consumo" ? mesConsumo(l) : l.competencia);
   const lancs = lancsTodos.filter((l) => mesDoLanc(l) === mes);
-  const r = resumirMes(lancs, categorias, movimentosDoMes(movimentos, mes));
+  const renda = rendaBase(lancsTodos.filter((l) => l.competencia === mes), contasFixas);
+  const r = resumirMes(lancs, categorias, movimentosDoMes(movimentos, mes), renda);
 
   const evolucao = Array.from({ length: 6 }, (_, i) => {
     const m = mesDe(somarMeses(inicioDoMes(mesIni6), i));
-    const doMes = lancsTodos.filter((l) => mesDoLanc(l) === m);
+    const doMes = lancsTodos.filter((l) => mesDoLanc(l) === m && !ehVale(l));
     return {
       mes: nomeMes(m, true),
       receitas: doMes.filter((l) => l.tipo === "receita").reduce((s, l) => s + l.valor, 0),
@@ -52,24 +55,23 @@ export default async function FinancasPage({ searchParams }: PageProps<"/financa
 
   // Peso do mês passado: do que sai do caixa neste mês, quanto foi gasto em meses anteriores (cartão)
   const caixaDoMes = lancsTodos.filter((l) => l.competencia === mes);
-  const receitasCaixa = caixaDoMes.filter((l) => l.tipo === "receita").reduce((s, l) => s + l.valor, 0);
-  const gastoAnterior = caixaDoMes.filter((l) => l.tipo === "despesa" && mesConsumo(l) < mes).reduce((s, l) => s + l.valor, 0);
+  const receitasCaixa = caixaDoMes.filter((l) => l.tipo === "receita" && !ehVale(l)).reduce((s, l) => s + l.valor, 0);
+  const gastoAnterior = caixaDoMes.filter((l) => l.tipo === "despesa" && !ehVale(l) && mesConsumo(l) < mes).reduce((s, l) => s + l.valor, 0);
   const pesoPassado = pct(gastoAnterior, receitasCaixa);
   const proxMes = mesDe(somarMeses(inicioDoMes(mes), 1));
   const jaComprometido = lancsTodos
-    .filter((l) => l.competencia === proxMes && l.tipo === "despesa" && mesConsumo(l) <= mes)
+    .filter((l) => l.competencia === proxMes && l.tipo === "despesa" && !ehVale(l) && mesConsumo(l) <= mes)
     .reduce((s, l) => s + l.valor, 0);
 
   // contas em aberto: compras no cartão aparecem agrupadas como uma fatura
   const faturas = agruparFaturas(caixaDoMes.filter((l) => !l.pago), cartoes);
-  const pendentes = caixaDoMes.filter((l) => !l.pago && !(l.cartao_id && faturas.some((f) => f.cartao.id === l.cartao_id))).sort((a, b) => a.data.localeCompare(b.data));
+  const pendentes = caixaDoMes.filter((l) => !l.pago && !ehVale(l) && !(l.cartao_id && faturas.some((f) => f.cartao.id === l.cartao_id))).sort((a, b) => a.data.localeCompare(b.data));
   const nAbertos = pendentes.length + faturas.length;
-  const rCaixa = visao === "caixa" ? r : resumirMes(caixaDoMes, categorias, []);
+  const rCaixa = visao === "caixa" ? r : resumirMes(caixaDoMes, categorias, [], renda);
   const catMap = new Map(categorias.map((c) => [c.id, c]));
   const maxCat = Math.max(1, ...r.porCategoria.map((c) => c.total));
   const ativas = caixinhas.filter((c) => !c.arquivada);
   const totalGuardado = ativas.reduce((s, c) => s + saldoCaixinha(c.id, movimentos), 0);
-  const salarios = lancs.filter((l) => l.tipo === "receita" && l.forma !== "vale").reduce((s, l) => s + l.valor, 0);
 
   return (
     <div>
@@ -130,7 +132,7 @@ export default async function FinancasPage({ searchParams }: PageProps<"/financa
 
       <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
         <StatTile rotulo="Receitas" valor={<Din v={r.receitas} />} icone="💼" cor="#16a34a"
-          detalhe={<>Salários/rendas <Din v={salarios} /> · Vales <Din v={r.valeRecebido} /></>} />
+          detalhe={<>Salários e rendas · vales à parte (<Din v={r.valeRecebido} />)</>} />
         <StatTile rotulo="Despesas" valor={<Din v={r.despesas} />} icone="🧾" cor="#e8508a"
           detalhe={<><Din v={r.pago} /> pagos · <Din v={r.aPagar} /> a pagar</>} />
         <StatTile rotulo="Saldo do mês" valor={<Din v={r.saldo} />} icone={r.saldo >= 0 ? "😊" : "😬"} cor={r.saldo >= 0 ? "#e0601a" : "#dc2626"} destaque
@@ -223,14 +225,14 @@ export default async function FinancasPage({ searchParams }: PageProps<"/financa
         </Secao>
 
         <div className="space-y-5">
-          <Secao titulo="Vale alimentação/refeição">
+          <Secao titulo="🥗 Vales (à parte)" acao={<Link href={`/financas/vale?mes=${mes}`} className="text-xs font-bold text-casa-principal">Abrir →</Link>}>
             <div className="grid grid-cols-3 gap-2 text-center">
               <div><p className="text-[11px] font-bold uppercase text-casa-muted">Recebido</p><p className="font-display text-lg font-semibold"><Din v={r.valeRecebido} /></p></div>
               <div><p className="text-[11px] font-bold uppercase text-casa-muted">Usado</p><p className="font-display text-lg font-semibold"><Din v={r.valeGasto} /></p></div>
               <div><p className="text-[11px] font-bold uppercase text-casa-muted">Sobra</p><p className={`font-display text-lg font-semibold ${r.valeRecebido - r.valeGasto < 0 ? "text-perigo" : "text-ok"}`}><Din v={r.valeRecebido - r.valeGasto} /></p></div>
             </div>
             <div className="mt-3"><Barra valor={r.valeGasto} total={Math.max(r.valeRecebido, r.valeGasto)} cor="#65a30d" alto /></div>
-            <p className="mt-2 text-xs text-casa-muted">Lance gastos pagos com o vale usando a forma “Vale (VA/VR)”.</p>
+            <p className="mt-2 text-xs text-casa-muted">Os vales não entram nas contas gerais acima — o controle completo fica na aba Vale.</p>
           </Secao>
 
           <Secao titulo="Caixinhas" acao={<Link href={`/financas/caixinhas?mes=${mes}`} className="text-xs font-bold text-casa-principal">Abrir →</Link>}>

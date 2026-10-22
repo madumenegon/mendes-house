@@ -71,6 +71,7 @@ create table eventos (
     check (recorrencia in ('nenhuma', 'diaria', 'semanal', 'quinzenal', 'mensal')),
   recorrencia_fim date,
   excecoes date[] not null default '{}',
+  dias_semana int[] not null default '{}', -- repetição semanal/quinzenal: 0=domingo … 6=sábado (vazio = mesmo dia da data)
   created_by text references membros(id),
   created_at timestamptz not null default now(),
   updated_by text references membros(id),
@@ -144,6 +145,7 @@ create table categorias (
   emoji text not null default '💸',
   cor text not null default '#64748b',
   orcamento_mensal numeric(12,2),
+  orcamento_pct numeric(5,2),            -- limite como % da renda (sem vale)
   palavras_chave text not null default '', -- usadas na leitura do extrato
   ordem int not null default 0
 );
@@ -183,6 +185,7 @@ create table lancamentos (
   data date not null,                 -- vencimento / data do lançamento (no cartão: vencimento da fatura)
   data_compra date,                   -- quando o gasto aconteceu (cartão)
   cartao_id uuid references cartoes(id) on delete set null,
+  vale_categoria_id uuid references categorias(id) on delete set null, -- qual vale (carteira)
   competencia char(7) not null,       -- 'YYYY-MM'
   categoria_id uuid references categorias(id) on delete set null,
   natureza text not null default 'variavel' check (natureza in ('fixo', 'variavel')),

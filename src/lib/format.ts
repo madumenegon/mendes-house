@@ -60,7 +60,7 @@ export const FORMAS: Record<string, string> = {
   credito: "Cartão de crédito",
   boleto: "Boleto",
   dinheiro: "Dinheiro",
-  vale: "Vale (VA/VR)",
+  vale: "Vale (alimentação/auto)",
   transferencia: "Transferência",
 };
 

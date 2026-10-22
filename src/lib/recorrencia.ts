@@ -1,4 +1,4 @@
-import { diaDaSemana, diasEntre, somarDias, somarMeses, ultimoDiaDoMes } from "@/lib/datas";
+import { diaDaSemana, diasEntre, inicioDaSemana, somarDias, somarMeses, ultimoDiaDoMes } from "@/lib/datas";
 import type { Dono, Evento, Ocorrencia, OcorrenciaTarefa, Tarefa, TarefaFeita } from "@/lib/types";
 
 /** Expande os eventos (inclusive recorrentes) em ocorrências entre
@@ -22,6 +22,18 @@ export function expandirEventos(eventos: Evento[], inicio: string, fim: string):
       for (let i = 0; i < 600; i++) {
         const d = somarMeses(ev.data, i);
         if (d > limite) break;
+        add(d);
+      }
+      continue;
+    }
+
+    // semanal/quinzenal em dias específicos (ex.: seg, qua e sex)
+    const dias = ev.dias_semana ?? [];
+    if ((ev.recorrencia === "semanal" || ev.recorrencia === "quinzenal") && dias.length) {
+      const semanaBase = inicioDaSemana(ev.data);
+      for (let d = ev.data > inicio ? ev.data : inicio; d <= limite; d = somarDias(d, 1)) {
+        if (!dias.includes(diaDaSemana(d))) continue;
+        if (ev.recorrencia === "quinzenal" && Math.floor(diasEntre(semanaBase, inicioDaSemana(d)) / 7) % 2 !== 0) continue;
         add(d);
       }
       continue;

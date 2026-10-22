@@ -133,8 +133,8 @@ export function LancamentosCliente({
 }
 
 export function FormLancamento({
-  lancamento, tipoInicial, categorias, cartoes, membro, dataPadrao, onFechar,
-}: { lancamento: Lancamento | null; tipoInicial: TipoLancamento; categorias: Categoria[]; cartoes: Cartao[]; membro: MembroId; dataPadrao: string; onFechar: () => void }) {
+  lancamento, tipoInicial, formaInicial, categorias, cartoes, membro, dataPadrao, onFechar,
+}: { lancamento: Lancamento | null; tipoInicial: TipoLancamento; formaInicial?: string; categorias: Categoria[]; cartoes: Cartao[]; membro: MembroId; dataPadrao: string; onFechar: () => void }) {
   const l = lancamento;
   const ativos = cartoes.filter((c) => c.ativo || c.id === l?.cartao_id);
   const [cartaoId, setCartaoId] = useState(l?.cartao_id ?? ativos[0]?.id ?? "");
@@ -143,7 +143,9 @@ export function FormLancamento({
   const [pessoa, setPessoa] = useState<Pessoa>(l?.pessoa ?? (tipoInicial === "receita" ? membro : "casal"));
   const [categoriaId, setCategoriaId] = useState(l?.categoria_id ?? "");
   const [natureza, setNatureza] = useState<Natureza>(l?.natureza ?? "variavel");
-  const [forma, setForma] = useState(l?.forma ?? (tipoInicial === "receita" ? "transferencia" : "pix"));
+  const [forma, setForma] = useState(l?.forma ?? formaInicial ?? (tipoInicial === "receita" ? "transferencia" : "pix"));
+  const carteirasVale = categorias.filter((c) => c.tipo === "receita" && /vale/i.test(c.nome));
+  const [valeId, setValeId] = useState(l?.vale_categoria_id ?? carteirasVale[0]?.id ?? "");
   const noCartao = tipo === "despesa" && forma === "credito";
   const cartaoSel = ativos.find((c) => c.id === cartaoId);
   const { pendente, erro, rodar } = useAcao();
@@ -226,6 +228,20 @@ export function FormLancamento({
           </div>
         )}
       </div>
+
+      {tipo === "despesa" && forma === "vale" && (
+        <div className="rounded-2xl bg-okclaro/60 p-3">
+          <label className="rotulo">Pago com qual vale?</label>
+          {carteirasVale.length === 0 ? (
+            <p className="text-sm">Crie categorias de receita com “Vale” no nome (ex.: Vale alimentação) para separar cada vale.</p>
+          ) : (
+            <select name="vale_categoria_id" value={valeId} onChange={(e) => setValeId(e.target.value)} className="campo">
+              {carteirasVale.map((c) => <option key={c.id} value={c.id}>{c.emoji} {c.nome}</option>)}
+            </select>
+          )}
+          <p className="mt-1 text-xs text-casa-muted">Gastos com vale ficam fora das contas gerais e aparecem na aba 🥗 Vale.</p>
+        </div>
+      )}
 
       {noCartao && (
         <div className="rounded-2xl bg-casa-destaqueclaro p-3">

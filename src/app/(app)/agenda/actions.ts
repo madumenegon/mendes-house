@@ -20,6 +20,8 @@ export async function salvarEvento(fd: FormData): Promise<Resultado> {
   let hora_fim = dia_inteiro ? null : textoOuNull(fd, "hora_fim");
   const recorrencia = texto(fd, "recorrencia") || "nenhuma";
   const recorrencia_fim = recorrencia === "nenhuma" ? null : textoOuNull(fd, "recorrencia_fim");
+  const porDias = recorrencia === "semanal" || recorrencia === "quinzenal";
+  const dias_semana = porDias ? [...new Set(fd.getAll("dias_semana").map(Number).filter((n) => n >= 0 && n <= 6))].sort() : [];
 
   if (!titulo) return { erro: "Dê um título ao compromisso." };
   if (!DONOS.includes(dono)) return { erro: "Diga de quem é o compromisso." };
@@ -47,6 +49,7 @@ export async function salvarEvento(fd: FormData): Promise<Resultado> {
     hora_fim,
     recorrencia,
     recorrencia_fim,
+    dias_semana,
     updated_by: membro,
     updated_at: new Date().toISOString(),
   };

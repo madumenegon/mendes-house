@@ -52,6 +52,7 @@ export interface Evento {
   recorrencia: Recorrencia;
   recorrencia_fim: string | null;
   excecoes: string[];
+  dias_semana?: number[]; // semanal/quinzenal em dias específicos (0=domingo)
   created_by: MembroId | null;
   created_at: string;
   updated_by: MembroId | null;
@@ -134,6 +135,7 @@ export interface Categoria {
   emoji: string;
   cor: string;
   orcamento_mensal: number | null;
+  orcamento_pct?: number | null; // limite como % da renda (sem vale)
   palavras_chave: string;
   ordem: number;
 }
@@ -159,6 +161,7 @@ export interface Lancamento {
   data: string; // vencimento (no cartão: vencimento da fatura)
   data_compra: string | null; // quando o gasto aconteceu
   cartao_id: string | null;
+  vale_categoria_id?: string | null; // qual vale (carteira) — só quando forma = "vale"
   competencia: string;
   categoria_id: string | null;
   natureza: Natureza;

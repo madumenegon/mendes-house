@@ -44,6 +44,8 @@ export async function salvarLancamento(fd: FormData): Promise<Resultado> {
     pessoa,
     forma,
     cartao_id: cartao?.id ?? null,
+    // gasto pago com vale: de qual vale saiu (receitas de vale usam a própria categoria)
+    vale_categoria_id: tipo === "despesa" && forma === "vale" ? textoOuNull(fd, "vale_categoria_id") : null,
     data_compra: cartao ? data : null,
     observacao: texto(fd, "observacao"),
     updated_by: membro,
@@ -354,9 +356,14 @@ export async function salvarCategoria(fd: FormData): Promise<Resultado> {
   return {};
 }
 
-export async function salvarOrcamento(id: string, valor: number | null): Promise<Resultado> {
+export async function salvarOrcamento(id: string, valor: number | null, pct: number | null = null): Promise<Resultado> {
   await exigirMembro();
-  const { error } = await db().from("categorias").update({ orcamento_mensal: valor && valor > 0 ? valor : null }).eq("id", id);
+  if (pct !== null && (pct < 0 || pct > 100)) return { erro: "Use um percentual entre 0 e 100." };
+  // ou % da renda, ou valor fixo — um substitui o outro
+  const { error } = await db()
+    .from("categorias")
+    .update(pct && pct > 0 ? { orcamento_pct: pct, orcamento_mensal: null } : { orcamento_pct: null, orcamento_mensal: valor && valor > 0 ? valor : null })
+    .eq("id", id);
   if (error) return { erro: error.message };
   atualizarTudo();
   return {};

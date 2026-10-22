@@ -2,6 +2,8 @@ import "server-only";
 import { db } from "@/lib/supabase";
 import { fimDoMes, hojeISO, inicioDoMes, mesDe, somarMeses, ultimoDiaDoMes } from "@/lib/datas";
 import { resumirTempo } from "@/lib/tempo";
+import { limiteCategoria } from "@/lib/orcamento";
+export { limiteCategoria };
 import type {
   Caixinha, Cartao, Categoria, ContaFixa, Evento, FamiliaInfo, Lancamento, MovimentoCaixinha, Tarefa, TarefaFeita, Valor,
 } from "@/lib/types";
@@ -75,7 +77,7 @@ const num = <T extends object>(rows: T[], campos: (keyof T)[]) =>
 export async function carregarCategorias(): Promise<Categoria[]> {
   const { data, error } = await db().from("categorias").select("*").order("tipo").order("ordem").order("nome");
   falhar("categorias", error);
-  return num((data ?? []) as Categoria[], ["orcamento_mensal"]);
+  return num((data ?? []) as Categoria[], ["orcamento_mensal", "orcamento_pct"]);
 }
 
 export async function carregarContasFixas(): Promise<ContaFixa[]> {
@@ -173,7 +175,21 @@ export interface ResumoMes {
   livre: number; // saldo − guardado nas caixinhas + retiradas
 }
 
-export function resumirMes(lancs: Lancamento[], categorias: Categoria[], movimentosDoMes: MovimentoCaixinha[]): ResumoMes {
+/** Vale (alimentação, refeição, automobilístico…) tem controle próprio e fica
+ * fora das contas gerais, que olham só salários/rendas e gastos que não são do vale. */
+export function ehVale(l: Pick<Lancamento, "forma">) {
+  return l.forma === "vale";
+}
+
+/** Renda que serve de base para os %: o que entrou no mês sem vale, ou as
+ * entradas fixas sem vale (o que for maior — no começo do mês nem tudo foi lançado). */
+export function rendaBase(lancsDoMes: Lancamento[], contas: ContaFixa[]): number {
+  const doMes = lancsDoMes.filter((l) => l.tipo === "receita" && !ehVale(l)).reduce((s, l) => s + l.valor, 0);
+  const fixas = contas.filter((c) => c.ativa && c.tipo === "receita" && c.forma !== "vale").reduce((s, c) => s + c.valor, 0);
+  return Math.max(doMes, fixas);
+}
+
+export function resumirMes(lancs: Lancamento[], categorias: Categoria[], movimentosDoMes: MovimentoCaixinha[], renda?: number): ResumoMes {
   const catMap = new Map(categorias.map((c) => [c.id, c]));
   const r: ResumoMes = {
     receitas: 0, despesas: 0, pago: 0, aPagar: 0, recebido: 0, aReceber: 0, fixo: 0, variavel: 0,
@@ -181,23 +197,27 @@ export function resumirMes(lancs: Lancamento[], categorias: Categoria[], movimen
   };
   const porCat = new Map<string, ResumoMes["porCategoria"][number]>();
   for (const l of lancs) {
+    if (ehVale(l)) {
+      // vale fica só no controle do vale
+      if (l.tipo === "receita") r.valeRecebido += l.valor;
+      else r.valeGasto += l.valor;
+      continue;
+    }
     if (l.tipo === "receita") {
       r.receitas += l.valor;
       if (l.pago) r.recebido += l.valor;
       else r.aReceber += l.valor;
-      if (l.forma === "vale") r.valeRecebido += l.valor;
     } else {
       r.despesas += l.valor;
       if (l.pago) r.pago += l.valor;
       else r.aPagar += l.valor;
       if (l.natureza === "fixo") r.fixo += l.valor;
       else r.variavel += l.valor;
-      if (l.forma === "vale") r.valeGasto += l.valor;
       const c = l.categoria_id ? catMap.get(l.categoria_id) : undefined;
       const key = c?.id ?? "sem";
       const atual = porCat.get(key) ?? {
         id: key, nome: c?.nome ?? "Sem categoria", emoji: c?.emoji ?? "❔", cor: c?.cor ?? "#94a3b8",
-        natureza: c?.natureza ?? "variavel", total: 0, orcamento: c?.orcamento_mensal ?? null,
+        natureza: c?.natureza ?? "variavel", total: 0, orcamento: null,
       };
       atual.total += l.valor;
       porCat.set(key, atual);
@@ -206,6 +226,11 @@ export function resumirMes(lancs: Lancamento[], categorias: Categoria[], movimen
   for (const m of movimentosDoMes) {
     if (m.tipo === "deposito") r.depositos += m.valor;
     else r.retiradas += m.valor;
+  }
+  const base = renda ?? r.receitas;
+  for (const pc of porCat.values()) {
+    const c = catMap.get(pc.id);
+    if (c) pc.orcamento = limiteCategoria(c, base);
   }
   r.porCategoria = [...porCat.values()].sort((a, b) => b.total - a.total);
   r.saldo = r.receitas - r.despesas;

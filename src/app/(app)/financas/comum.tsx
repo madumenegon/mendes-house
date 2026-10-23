@@ -17,6 +17,7 @@ export function AbasFinancas({ ativo, mes }: { ativo: string; mes: string }) {
         { href: "/financas/lancamentos", label: "🧾 Lançamentos" },
         { href: "/financas/contas-fixas", label: "📌 Contas fixas" },
         { href: "/financas/orcamento", label: "🎯 Arquitetura" },
+        { href: "/financas/projecoes", label: "🔭 Projeções" },
         { href: "/financas/cartoes", label: "💳 Cartões" },
         { href: "/financas/vale", label: "🥗 Vale" },
         { href: "/financas/caixinhas", label: "🐷 Caixinhas" },

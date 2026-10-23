@@ -74,7 +74,7 @@ export function OrcamentoCliente({ mes, categorias, gasto, renda }: { mes: strin
         </div>
         <p className="mt-4 text-xs text-casa-muted">
           Todos os % são <b>da renda</b>: se Despesas tem 50%, as classes dentro dela somam 50%, e as subclasses somam o % da sua classe.
-          Clique numa grande conta para abrir. Renda considerada: <b>salários e outras rendas, sem os vales</b>, de {nomeMes(mes)}.
+          Clique numa grande conta para abrir. Renda considerada: <b>salários, outras rendas e vales</b>, de {nomeMes(mes)}.
         </p>
       </Secao>
 

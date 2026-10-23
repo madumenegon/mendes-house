@@ -2,7 +2,7 @@ import Link from "next/link";
 import { exigirMembro } from "@/lib/auth";
 import {
   agruparFaturas, autoGerarSePreciso, carregarCaixinhas, carregarCartoes, carregarCategorias, carregarContasFixas, carregarFamilia, carregarLancamentos,
-  ehVale, rendaBase,
+  rendaBase,
   carregarResumoTempo, movimentosDoMes, resumirMes, saldoCaixinha,
 } from "@/lib/dados";
 import { dataCurta, hojeISO, inicioDaSemana, inicioDoMes, mesDe, nomeMes, somarDias, somarMeses } from "@/lib/datas";
@@ -45,7 +45,7 @@ export default async function FinancasPage({ searchParams }: PageProps<"/financa
 
   const evolucao = Array.from({ length: 6 }, (_, i) => {
     const m = mesDe(somarMeses(inicioDoMes(mesIni6), i));
-    const doMes = lancsTodos.filter((l) => mesDoLanc(l) === m && !ehVale(l));
+    const doMes = lancsTodos.filter((l) => mesDoLanc(l) === m);
     return {
       mes: nomeMes(m, true),
       receitas: doMes.filter((l) => l.tipo === "receita").reduce((s, l) => s + l.valor, 0),
@@ -55,17 +55,17 @@ export default async function FinancasPage({ searchParams }: PageProps<"/financa
 
   // Peso do mês passado: do que sai do caixa neste mês, quanto foi gasto em meses anteriores (cartão)
   const caixaDoMes = lancsTodos.filter((l) => l.competencia === mes);
-  const receitasCaixa = caixaDoMes.filter((l) => l.tipo === "receita" && !ehVale(l)).reduce((s, l) => s + l.valor, 0);
-  const gastoAnterior = caixaDoMes.filter((l) => l.tipo === "despesa" && !ehVale(l) && mesConsumo(l) < mes).reduce((s, l) => s + l.valor, 0);
+  const receitasCaixa = caixaDoMes.filter((l) => l.tipo === "receita").reduce((s, l) => s + l.valor, 0);
+  const gastoAnterior = caixaDoMes.filter((l) => l.tipo === "despesa" && mesConsumo(l) < mes).reduce((s, l) => s + l.valor, 0);
   const pesoPassado = pct(gastoAnterior, receitasCaixa);
   const proxMes = mesDe(somarMeses(inicioDoMes(mes), 1));
   const jaComprometido = lancsTodos
-    .filter((l) => l.competencia === proxMes && l.tipo === "despesa" && !ehVale(l) && mesConsumo(l) <= mes)
+    .filter((l) => l.competencia === proxMes && l.tipo === "despesa" && mesConsumo(l) <= mes)
     .reduce((s, l) => s + l.valor, 0);
 
   // contas em aberto: compras no cartão aparecem agrupadas como uma fatura
   const faturas = agruparFaturas(caixaDoMes.filter((l) => !l.pago), cartoes);
-  const pendentes = caixaDoMes.filter((l) => !l.pago && !ehVale(l) && !(l.cartao_id && faturas.some((f) => f.cartao.id === l.cartao_id))).sort((a, b) => a.data.localeCompare(b.data));
+  const pendentes = caixaDoMes.filter((l) => !l.pago && !(l.cartao_id && faturas.some((f) => f.cartao.id === l.cartao_id))).sort((a, b) => a.data.localeCompare(b.data));
   const nAbertos = pendentes.length + faturas.length;
   const rCaixa = visao === "caixa" ? r : resumirMes(caixaDoMes, categorias, [], renda);
   const catMap = new Map(categorias.map((c) => [c.id, c]));
@@ -132,7 +132,7 @@ export default async function FinancasPage({ searchParams }: PageProps<"/financa
 
       <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
         <StatTile rotulo="Receitas" valor={<Din v={r.receitas} />} icone="💼" cor="#16a34a"
-          detalhe={<>Salários e rendas · vales à parte (<Din v={r.valeRecebido} />)</>} />
+          detalhe={<>Salários, rendas e vales (<Din v={r.valeRecebido} /> de vale)</>} />
         <StatTile rotulo="Despesas" valor={<Din v={r.despesas} />} icone="🧾" cor="#e8508a"
           detalhe={<><Din v={r.pago} /> pagos · <Din v={r.aPagar} /> a pagar</>} />
         <StatTile rotulo="Saldo do mês" valor={<Din v={r.saldo} />} icone={r.saldo >= 0 ? "😊" : "😬"} cor={r.saldo >= 0 ? "#e0601a" : "#dc2626"} destaque

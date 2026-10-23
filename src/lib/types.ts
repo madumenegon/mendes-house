@@ -135,7 +135,7 @@ export interface Categoria {
   emoji: string;
   cor: string;
   orcamento_mensal: number | null;
-  orcamento_pct?: number | null; // limite como % da renda (sem vale)
+  orcamento_pct?: number | null; // limite como % da renda (vales inclusos)
   parent_id?: string | null; // classe/subclasse: aponta para a conta de cima
   grande_conta?: boolean;
   palavras_chave: string;

@@ -145,7 +145,7 @@ create table categorias (
   emoji text not null default '💸',
   cor text not null default '#64748b',
   orcamento_mensal numeric(12,2),
-  orcamento_pct numeric(5,2),            -- limite como % da renda (sem vale)
+  orcamento_pct numeric(9,4),            -- limite como % da renda (sem vale); 4 casas p/ o R$ bater
   parent_id uuid references categorias(id) on delete cascade, -- classe/subclasse dentro de outra conta
   grande_conta boolean not null default false,
   palavras_chave text not null default '', -- usadas na leitura do extrato

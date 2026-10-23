@@ -10,8 +10,8 @@ import { parseValor } from "@/lib/format";
 import { nomeMes } from "@/lib/datas";
 import { achatar, montarArvore, somarComFilhos, type No } from "@/lib/arvore";
 import type { Categoria, Natureza, TipoLancamento } from "@/lib/types";
-import { criarConta, excluirCategoria, moverConta, renomearConta, salvarCategoria, salvarOrcamento } from "../actions";
-import { Din } from "@/components/Privacidade";
+import { criarConta, excluirCategoria, moverConta, renomearConta, salvarCategoria, salvarPctConta } from "../actions";
+import { Din, useOcultar } from "@/components/Privacidade";
 
 type PctDe = (c: Categoria) => number | null;
 interface Ctx {
@@ -33,7 +33,19 @@ export function OrcamentoCliente({ mes, categorias, gasto, renda }: { mes: strin
   const [aberta, setAberta] = useState<string | null>(null);
   const [editar, setEditar] = useState<Categoria | TipoLancamento | null>(null);
   const pctDe: PctDe = (c) => (c.id in editados ? editados[c.id] : c.orcamento_pct ?? null);
-  const ctx: Ctx = { pctDe, mudarPct: (id, v) => setEditados((e) => ({ ...e, [id]: v })), renda, gasto, onEditar: setEditar };
+  // ao mudar uma conta, as de cima viram a soma das de dentro (o servidor faz o mesmo ao salvar)
+  const mudarPct = (id: string, v: number | null) =>
+    setEditados((e) => {
+      const novo = { ...e, [id]: v };
+      const val = (c: Categoria) => (c.id in novo ? novo[c.id] : c.orcamento_pct ?? null);
+      const porId = new Map(categorias.map((c) => [c.id, c]));
+      for (let p = porId.get(id)?.parent_id; p; p = porId.get(p)?.parent_id) {
+        const soma = categorias.filter((f) => f.parent_id === p).reduce((s, f) => s + (val(f) ?? 0), 0);
+        novo[p] = soma > 0 ? Math.round(soma * 10000) / 10000 : null;
+      }
+      return novo;
+    });
+  const ctx: Ctx = { pctDe, mudarPct, renda, gasto, onEditar: setEditar };
 
   const arvore = montarArvore(categorias);
   const grandes = arvore.filter((n) => n.c.grande_conta);
@@ -222,15 +234,15 @@ function PainelConta({ n, ctx, onFechar }: { n: No; ctx: Ctx; onFechar: () => vo
           </div>
         </div>
         <div className="flex items-center gap-2">
-          <CampoPct c={n.c} ctx={ctx} grande />
+          <CamposConta c={n.c} ctx={ctx} grande />
           <button className="btn-fantasma p-2" onClick={() => ctx.onEditar(n.c)} title="Ícone, cor e palavras-chave"><Pencil size={15} /></button>
           <button className="btn-fantasma p-2" onClick={onFechar} title="Fechar"><X size={16} /></button>
         </div>
       </div>
 
       <div className="p-4 pt-2 sm:p-5 sm:pt-2">
-        <div className="hidden grid-cols-[minmax(0,1fr)_5.5rem_7rem_9rem_5.5rem] gap-x-3 border-b border-casa-line pb-1.5 text-[11px] font-bold uppercase text-casa-muted md:grid">
-          <span>Classe / subclasse</span><span className="text-right">% renda</span><span className="text-right">Valor</span><span>Gasto no mês</span><span />
+        <div className="hidden grid-cols-[minmax(0,1fr)_5.5rem_8rem_9rem_5.5rem] gap-x-3 border-b border-casa-line pb-1.5 text-[11px] font-bold uppercase text-casa-muted md:grid">
+          <span>Classe / subclasse</span><span className="text-right">% renda</span><span className="text-right">Valor R$</span><span>Gasto no mês</span><span />
         </div>
         {n.filhos.length === 0 ? (
           <p className="py-4 text-sm text-casa-muted">Nenhuma classe ainda. Comece criando a primeira abaixo.</p>
@@ -260,8 +272,8 @@ function LinhaConta({ n, pai, ctx }: { n: No; pai: No; ctx: Ctx }) {
 
   return (
     <li>
-      <div className="grid grid-cols-[minmax(0,1fr)_5.5rem_auto] items-center gap-x-2 gap-y-1 border-b border-casa-line/70 py-2.5 md:grid-cols-[minmax(0,1fr)_5.5rem_7rem_9rem_5.5rem] md:gap-x-3">
-        <div className="flex min-w-0 items-center gap-2" style={{ paddingLeft: recuo }}>
+      <div className="grid grid-cols-[5rem_7.5rem_minmax(0,1fr)] items-center gap-x-2 gap-y-1.5 border-b border-casa-line/70 py-2.5 md:grid-cols-[minmax(0,1fr)_5.5rem_8rem_9rem_5.5rem] md:gap-x-3">
+        <div className="order-1 col-span-2 flex min-w-0 items-center gap-2 md:col-span-1" style={{ paddingLeft: recuo }}>
           {n.nivel > 1 && <span className="h-4 w-3 shrink-0 rounded-bl-md border-b-2 border-l-2 border-casa-line" />}
           <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg text-sm" style={{ background: `${n.c.cor}22` }}>{n.c.emoji}</span>
           <div className="min-w-0">
@@ -272,16 +284,14 @@ function LinhaConta({ n, pai, ctx }: { n: No; pai: No; ctx: Ctx }) {
             </div>
           </div>
         </div>
-        <CampoPct c={n.c} ctx={ctx} />
-        <span className="hidden text-right text-sm font-semibold tabular-nums md:block">{valor !== null ? <Din v={valor} /> : <span className="text-casa-muted">—</span>}</span>
-        <div className="col-span-3 row-start-2 md:col-span-1 md:row-start-auto" style={{ paddingLeft: recuo }}>
+        <CamposConta c={n.c} ctx={ctx} ordem={["order-3 md:order-2", "order-4 md:order-3"]} />
+        <div className="order-5 min-w-0 md:order-4">
           <div className="mb-0.5 flex justify-between text-[11px]">
-            <span className={estourou ? "font-bold text-perigo" : "text-casa-muted"}><Din v={gasto} /></span>
-            <span className="text-casa-muted md:hidden">{valor !== null && <>de <Din v={valor} /></>}</span>
+            <span className={estourou ? "font-bold text-perigo" : "text-casa-muted"}><Din v={gasto} /> gastos</span>
           </div>
           <Barra valor={gasto} total={valor ?? Math.max(gasto, 1)} cor={estourou ? "#dc2626" : valor && gasto / valor > 0.8 ? "#d97706" : n.c.cor} />
         </div>
-        <div className="col-start-3 row-start-1 flex justify-end md:col-start-auto md:row-start-auto">
+        <div className="order-2 flex justify-end md:order-5">
           <button className="btn-fantasma p-1.5" onClick={() => setNovo(true)} title="Criar subclasse"><Plus size={14} /></button>
           <button className="btn-fantasma p-1.5" onClick={() => ctx.onEditar(n.c)} title="Ícone, cor e palavras-chave"><Pencil size={14} /></button>
           <button className="btn-fantasma p-1.5 hover:text-perigo" onClick={excluir} disabled={pendente} title="Excluir"><Trash2 size={14} /></button>
@@ -300,29 +310,50 @@ function LinhaConta({ n, pai, ctx }: { n: No; pai: No; ctx: Ctx }) {
 
 // ------------------------------------------------------------------ peças editáveis
 
-function CampoPct({ c, ctx, grande }: { c: Categoria; ctx: Ctx; grande?: boolean }) {
-  const br = (n: number | null | undefined) => (n ? String(n).replace(".", ",") : "");
-  const [txt, setTxt] = useState(br(c.orcamento_pct));
+/** % da renda e valor em R$ ligados: preencher um calcula o outro. */
+function CamposConta({ c, ctx, grande, ordem = ["", ""] }: { c: Categoria; ctx: Ctx; grande?: boolean; ordem?: [string, string] }) {
+  const [foco, setFoco] = useState<"pct" | "valor" | null>(null);
+  const [txt, setTxt] = useState("");
   const { rodar, pendente, erro } = useAcao();
-  const salvar = () => {
-    const n = txt ? parseValor(txt) : null;
-    if ((n || null) === (c.orcamento_pct || null)) return;
-    rodar(() => salvarOrcamento(c.id, null, n || null));
+  const oculto = useOcultar();
+  const p = ctx.pctDe(c);
+  const fmtN = (n: number, casas: number) => n.toLocaleString("pt-BR", { useGrouping: false, minimumFractionDigits: casas, maximumFractionDigits: 2 });
+  const texto = (campo: "pct" | "valor") => (p ? (campo === "pct" ? fmtN(p, 0) : fmtN(valorDe(p, ctx.renda), 2)) : "");
+  const mostrar = (campo: "pct" | "valor") => (foco === campo ? txt : campo === "valor" && oculto && p ? "•••••" : texto(campo));
+
+  const entrar = (campo: "pct" | "valor") => { setFoco(campo); setTxt(texto(campo)); };
+  const mudar = (campo: "pct" | "valor", t: string) => {
+    setTxt(t);
+    const n = t ? parseValor(t) : 0;
+    const pct = campo === "pct" ? n : ctx.renda > 0 ? (n / ctx.renda) * 100 : 0;
+    ctx.mudarPct(c.id, pct > 0 ? Math.round(pct * 10000) / 10000 : null);
   };
+  const sair = () => {
+    setFoco(null);
+    if ((p || null) !== (c.orcamento_pct || null)) rodar(() => salvarPctConta(c.id, p));
+  };
+  const props = (campo: "pct" | "valor") => ({
+    value: mostrar(campo),
+    onFocus: () => entrar(campo),
+    onChange: (e: React.ChangeEvent<HTMLInputElement>) => mudar(campo, e.target.value),
+    onBlur: sair,
+    onKeyDown: (e: React.KeyboardEvent<HTMLInputElement>) => e.key === "Enter" && e.currentTarget.blur(),
+    inputMode: "decimal" as const,
+    disabled: pendente || (campo === "valor" && ctx.renda <= 0),
+  });
+  const base = `campo text-right font-bold tabular-nums ${grande ? "py-2 text-base" : "py-1.5"} ${erro ? "border-perigo" : ""}`;
+
   return (
-    <div className="relative" title={erro ?? "% da renda"}>
-      <input
-        value={txt}
-        onChange={(e) => { setTxt(e.target.value); ctx.mudarPct(c.id, e.target.value ? parseValor(e.target.value) || null : null); }}
-        onBlur={salvar}
-        onKeyDown={(e) => e.key === "Enter" && e.currentTarget.blur()}
-        inputMode="decimal"
-        placeholder="—"
-        disabled={pendente}
-        className={`campo pr-6 text-right font-bold tabular-nums ${grande ? "w-24 py-2 text-base" : "py-1.5"} ${erro ? "border-perigo" : ""}`}
-      />
-      <span className="absolute right-2.5 top-1/2 -translate-y-1/2 text-xs text-casa-muted">%</span>
-    </div>
+    <>
+      <div className={`relative ${ordem[0]} ${grande ? "w-24" : ""}`} title={erro ?? "% da renda"}>
+        <input {...props("pct")} placeholder="—" className={`${base} pr-6`} />
+        <span className="absolute right-2.5 top-1/2 -translate-y-1/2 text-xs text-casa-muted">%</span>
+      </div>
+      <div className={`relative ${ordem[1]} ${grande ? "w-36" : ""}`} title={erro ?? "Valor em R$ (calcula o %)"}>
+        <span className="absolute left-2.5 top-1/2 -translate-y-1/2 text-xs text-casa-muted">R$</span>
+        <input {...props("valor")} placeholder="—" className={`${base} pl-8`} />
+      </div>
+    </>
   );
 }
 

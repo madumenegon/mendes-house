@@ -402,6 +402,32 @@ export async function criarConta(parentId: string | null, nome: string): Promise
   return {};
 }
 
+/** Define o % da renda de uma conta e refaz as contas de cima como a soma das de dentro. */
+export async function salvarPctConta(id: string, pct: number | null): Promise<Resultado> {
+  await exigirMembro();
+  if (pct !== null && (pct < 0 || pct > 100)) return { erro: "Use um percentual entre 0 e 100." };
+  const supa = db();
+  const { data, error: e1 } = await supa.from("categorias").select("id, parent_id, orcamento_pct");
+  if (e1) return { erro: e1.message };
+  const linhas = (data ?? []).map((c) => ({ id: c.id as string, pai: c.parent_id as string | null, pct: c.orcamento_pct === null ? null : Number(c.orcamento_pct) }));
+  const porId = new Map(linhas.map((c) => [c.id, c]));
+  const alvo = porId.get(id);
+  if (!alvo) return { erro: "Conta não encontrada." };
+  alvo.pct = pct && pct > 0 ? Math.round(pct * 10000) / 10000 : null;
+  const mudou = [alvo];
+  for (let p = alvo.pai ? porId.get(alvo.pai) : undefined; p; p = p.pai ? porId.get(p.pai) : undefined) {
+    const soma = linhas.filter((f) => f.pai === p!.id).reduce((s, f) => s + (f.pct ?? 0), 0);
+    p.pct = soma > 0 ? Math.round(soma * 10000) / 10000 : null;
+    mudou.push(p);
+  }
+  for (const c of mudou) {
+    const { error } = await supa.from("categorias").update({ orcamento_pct: c.pct, orcamento_mensal: null }).eq("id", c.id);
+    if (error) return { erro: error.message };
+  }
+  atualizarTudo();
+  return {};
+}
+
 export async function renomearConta(id: string, nome: string): Promise<Resultado> {
   await exigirMembro();
   nome = nome.trim();

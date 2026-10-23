@@ -378,6 +378,56 @@ export async function excluirCategoria(id: string): Promise<Resultado> {
   return {};
 }
 
+// ------------------------------------------------------------------ arquitetura de contas
+
+/** Cria uma grande conta (sem pai) ou uma classe/subclasse dentro de outra. */
+export async function criarConta(parentId: string | null, nome: string): Promise<Resultado> {
+  await exigirMembro();
+  nome = nome.trim();
+  if (!nome) return { erro: "Dê um nome à conta." };
+  const supa = db();
+  let herda = { natureza: "variavel", emoji: "💸", cor: "#94a3b8" };
+  if (parentId) {
+    const { data: pai } = await supa.from("categorias").select("natureza, emoji, cor").eq("id", parentId).single();
+    if (!pai) return { erro: "Conta de cima não encontrada." };
+    herda = pai;
+  }
+  const irmaos = parentId
+    ? await supa.from("categorias").select("ordem").eq("parent_id", parentId)
+    : await supa.from("categorias").select("ordem").eq("tipo", "despesa").is("parent_id", null);
+  const ordem = Math.max(0, ...(irmaos.data ?? []).map((i) => i.ordem)) + 1;
+  const { error } = await supa.from("categorias").insert({ ...herda, nome, tipo: "despesa", parent_id: parentId, grande_conta: !parentId, ordem });
+  if (error) return { erro: error.message };
+  atualizarTudo();
+  return {};
+}
+
+export async function renomearConta(id: string, nome: string): Promise<Resultado> {
+  await exigirMembro();
+  nome = nome.trim();
+  if (!nome) return { erro: "O nome não pode ficar vazio." };
+  const { error } = await db().from("categorias").update({ nome }).eq("id", id);
+  if (error) return { erro: error.message };
+  atualizarTudo();
+  return {};
+}
+
+/** Pendura a conta debaixo de outra (ou vira grande conta, com parentId null). */
+export async function moverConta(id: string, parentId: string | null): Promise<Resultado> {
+  await exigirMembro();
+  const supa = db();
+  if (parentId) {
+    // não deixa pendurar uma conta dentro dela mesma
+    const { data } = await supa.from("categorias").select("id, parent_id");
+    const pai = new Map((data ?? []).map((c) => [c.id as string, c.parent_id as string | null]));
+    for (let p: string | null = parentId; p; p = pai.get(p) ?? null) if (p === id) return { erro: "Não dá para colocar uma conta dentro dela mesma." };
+  }
+  const { error } = await supa.from("categorias").update({ parent_id: parentId, grande_conta: !parentId }).eq("id", id);
+  if (error) return { erro: error.message };
+  atualizarTudo();
+  return {};
+}
+
 // ------------------------------------------------------------------ caixinhas
 
 export async function salvarCaixinha(fd: FormData): Promise<Resultado> {

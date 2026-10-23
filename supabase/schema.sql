@@ -146,6 +146,8 @@ create table categorias (
   cor text not null default '#64748b',
   orcamento_mensal numeric(12,2),
   orcamento_pct numeric(5,2),            -- limite como % da renda (sem vale)
+  parent_id uuid references categorias(id) on delete cascade, -- classe/subclasse dentro de outra conta
+  grande_conta boolean not null default false,
   palavras_chave text not null default '', -- usadas na leitura do extrato
   ordem int not null default 0
 );

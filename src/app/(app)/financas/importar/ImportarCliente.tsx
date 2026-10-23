@@ -6,6 +6,7 @@ import clsx from "clsx";
 import { FileUp, Loader2, Sparkles } from "lucide-react";
 import { useAcao } from "@/components/useAcao";
 import { FORMAS } from "@/lib/format";
+import { opcoesCategoria, profundidades } from "@/lib/arvore";
 import { dataCurta, mesDe } from "@/lib/datas";
 import type { Cartao, Categoria, Pessoa, TipoLancamento } from "@/lib/types";
 import { vencimentoFatura } from "@/lib/cartao";
@@ -40,7 +41,9 @@ export function ImportarCliente({
     const n = normalizar(descricao);
     const anterior = historico.find((h) => h.tipo === tipo && h.categoria_id && normalizar(h.descricao) === n);
     if (anterior) return anterior.categoria_id;
-    const cats = categorias.filter((c) => c.tipo === tipo);
+    // a mais específica primeiro: "Combustível" ganha de "Transporte"
+    const prof = profundidades(categorias);
+    const cats = categorias.filter((c) => c.tipo === tipo).sort((a, b) => (prof.get(b.id) ?? 0) - (prof.get(a.id) ?? 0));
     for (const c of cats) {
       const chaves = c.palavras_chave.split(",").map((k) => normalizar(k)).filter(Boolean);
       if (chaves.some((k) => n.includes(k))) return c.id;
@@ -237,7 +240,7 @@ export function ImportarCliente({
                         className="campo py-1 text-xs"
                       >
                         <option value="">—</option>
-                        {categorias.filter((c) => c.tipo === l.tipo).map((c) => <option key={c.id} value={c.id}>{c.emoji} {c.nome}</option>)}
+                        {opcoesCategoria(categorias, l.tipo).map((o) => <option key={o.id} value={o.id}>{o.label}</option>)}
                       </select>
                     </td>
                     <td className="p-2">

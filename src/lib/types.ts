@@ -136,6 +136,8 @@ export interface Categoria {
   cor: string;
   orcamento_mensal: number | null;
   orcamento_pct?: number | null; // limite como % da renda (sem vale)
+  parent_id?: string | null; // classe/subclasse: aponta para a conta de cima
+  grande_conta?: boolean;
   palavras_chave: string;
   ordem: number;
 }

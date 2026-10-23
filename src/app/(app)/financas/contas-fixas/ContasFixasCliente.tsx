@@ -8,6 +8,7 @@ import { Segmentos } from "@/components/Escolhas";
 import { useAcao } from "@/components/useAcao";
 import { DonoBadge, Secao, Vazio } from "@/components/ui";
 import { CORES, FORMAS } from "@/lib/format";
+import { opcoesCategoria } from "@/lib/arvore";
 import { nomeMes } from "@/lib/datas";
 import type { Categoria, ContaFixa, Pessoa, TipoLancamento } from "@/lib/types";
 import { excluirContaFixa, gerarMes, salvarContaFixa } from "../actions";
@@ -111,7 +112,7 @@ function FormConta({ conta, tipo, categorias, onFechar }: { conta: ContaFixa | n
           <label className="rotulo">Categoria</label>
           <select name="categoria_id" defaultValue={conta?.categoria_id ?? ""} className="campo">
             <option value="">—</option>
-            {categorias.filter((c) => c.tipo === tipo).map((c) => <option key={c.id} value={c.id}>{c.emoji} {c.nome}</option>)}
+            {opcoesCategoria(categorias, tipo).map((o) => <option key={o.id} value={o.id}>{o.label}</option>)}
           </select>
         </div>
         <div>

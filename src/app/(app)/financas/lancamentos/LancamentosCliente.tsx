@@ -10,6 +10,7 @@ import { DonoBadge, Vazio } from "@/components/ui";
 import { CORES, FORMAS, NOMES } from "@/lib/format";
 import { dataCurta, dataLonga, nomeMes } from "@/lib/datas";
 import { vencimentoFatura } from "@/lib/cartao";
+import { achatar, montarArvore } from "@/lib/arvore";
 import type { Cartao, Categoria, Lancamento, MembroId, Natureza, Pessoa, TipoLancamento } from "@/lib/types";
 import { excluirLancamento, salvarLancamento } from "../actions";
 import { BotaoPago } from "../BotaoPago";
@@ -149,7 +150,12 @@ export function FormLancamento({
   const noCartao = tipo === "despesa" && forma === "credito";
   const cartaoSel = ativos.find((c) => c.id === cartaoId);
   const { pendente, erro, rodar } = useAcao();
-  const cats = categorias.filter((c) => c.tipo === tipo);
+  // categorias agrupadas pela grande conta; as soltas ficam num grupo sem título
+  const arvore = montarArvore(categorias, tipo);
+  const grupos = [
+    ...arvore.filter((n) => n.filhos.length).map((n) => ({ titulo: `${n.c.emoji} ${n.c.nome}` as string | null, nos: achatar(n.filhos) })),
+    { titulo: null, nos: arvore.filter((n) => !n.filhos.length) },
+  ].filter((g) => g.nos.length);
 
   const escolherCategoria = (id: string) => {
     setCategoriaId(id);
@@ -187,17 +193,24 @@ export function FormLancamento({
       <div>
         <label className="rotulo">Categoria</label>
         <input type="hidden" name="categoria_id" value={categoriaId} />
-        <div className="flex max-h-36 flex-wrap gap-1.5 overflow-y-auto">
-          {cats.map((c) => (
-            <button
-              type="button"
-              key={c.id}
-              onClick={() => escolherCategoria(c.id)}
-              className="rounded-full border-2 px-2.5 py-1 text-xs font-bold"
-              style={categoriaId === c.id ? { borderColor: c.cor, background: `${c.cor}1c`, color: c.cor } : { borderColor: "#f0e2c4", color: "#5c534c" }}
-            >
-              {c.emoji} {c.nome}
-            </button>
+        <div className="max-h-52 space-y-2 overflow-y-auto">
+          {grupos.map((g) => (
+            <div key={g.titulo ?? "soltas"}>
+              {g.titulo && <p className="mb-1 text-[11px] font-bold uppercase tracking-wide text-casa-muted">{g.titulo}</p>}
+              <div className="flex flex-wrap gap-1.5">
+                {g.nos.map(({ c, nivel }) => (
+                  <button
+                    type="button"
+                    key={c.id}
+                    onClick={() => escolherCategoria(c.id)}
+                    className={clsx("rounded-full border-2 px-2.5 py-1 text-xs", nivel >= 2 ? "font-semibold" : "font-bold")}
+                    style={categoriaId === c.id ? { borderColor: c.cor, background: `${c.cor}1c`, color: c.cor } : { borderColor: "#f0e2c4", color: "#5c534c" }}
+                  >
+                    {c.emoji} {c.nome}
+                  </button>
+                ))}
+              </div>
+            </div>
           ))}
         </div>
       </div>

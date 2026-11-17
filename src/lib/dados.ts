@@ -129,7 +129,7 @@ export async function gerarContasFixasDoMes(mes: string, membro: string | null):
   const [a, m] = mes.split("-").map(Number);
   const ultimo = ultimoDiaDoMes(a, m);
   const novos = ((contas ?? []) as ContaFixa[])
-    .filter((c) => !ja.has(c.id))
+    .filter((c) => !ja.has(c.id) && (!c.desde || mes >= c.desde))
     .map((c) => ({
       tipo: c.tipo,
       descricao: c.descricao,

@@ -36,7 +36,7 @@ export default async function ProjecoesPage({ searchParams }: PageProps<"/financ
   for (const m of meses.filter((x) => x > proximo)) {
     const ja = new Set(lancs.filter((l) => l.competencia === m && l.conta_fixa_id).map((l) => l.conta_fixa_id));
     const [a, mm] = m.split("-").map(Number);
-    for (const cf of contas.filter((x) => x.ativa && !ja.has(x.id))) {
+    for (const cf of contas.filter((x) => x.ativa && !ja.has(x.id) && (!x.desde || m >= x.desde))) {
       const c = cf.categoria_id ? catMap.get(cf.categoria_id) : null;
       itens.push({
         id: `prev-${cf.id}-${m}`, mes: m, data: `${m}-${String(Math.min(cf.dia, ultimoDiaDoMes(a, mm))).padStart(2, "0")}`,

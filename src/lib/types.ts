@@ -152,6 +152,7 @@ export interface ContaFixa {
   pessoa: Pessoa;
   forma: string;
   ativa: boolean;
+  desde?: string | null; // "YYYY-MM": só lança a partir deste mês
   created_by: MembroId | null;
 }
 

@@ -95,6 +95,7 @@ create table tarefas (
   duracao_min int not null default 30,
   valor_id uuid references valores(id) on delete set null,
   ativa boolean not null default true,
+  desde char(7),                          -- só lança a partir deste mês (YYYY-MM)
   created_by text references membros(id),
   created_at timestamptz not null default now()
 );
@@ -162,6 +163,7 @@ create table contas_fixas (
   pessoa text not null default 'casal' check (pessoa in ('madu', 'gabriel', 'casal')),
   forma text not null default 'pix',
   ativa boolean not null default true,
+  desde char(7),                          -- só lança a partir deste mês (YYYY-MM)
   created_by text references membros(id),
   created_at timestamptz not null default now()
 );

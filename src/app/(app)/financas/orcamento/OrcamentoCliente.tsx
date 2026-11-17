@@ -57,7 +57,7 @@ export function OrcamentoCliente({ mes, categorias, gasto, renda }: { mes: strin
 
   return (
     <div className="space-y-5">
-      <Secao titulo="🎯 Arquitetura das contas">
+      <Secao titulo="🎯 Orçado: arquitetura das contas">
         <div className="grid items-center gap-5 sm:grid-cols-[minmax(0,280px)_1fr]">
           <Esferas grandes={grandes} pctDe={pctDe} aberta={aberta} onAbrir={(id) => setAberta(aberta === id ? null : id)} distribuido={distribuido} />
           <div className="grid min-w-0 grid-cols-3 gap-2 sm:grid-cols-1 sm:gap-3 xl:grid-cols-3">

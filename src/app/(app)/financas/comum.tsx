@@ -7,23 +7,36 @@ export function mesDaUrl(v: string | string[] | undefined): string {
   return mesValido(v as string) ? (v as string) : mesDe(hojeISO());
 }
 
+// tudo o que é "o que de fato aconteceu" fica dentro do Realizado
+const REALIZADO = [
+  { href: "/financas/realizado", label: "📋 Mês" },
+  { href: "/financas/contas-fixas", label: "📌 Contas fixas" },
+  { href: "/financas/cartoes", label: "💳 Cartões" },
+  { href: "/financas/vale", label: "🥗 Vale" },
+  { href: "/financas/caixinhas", label: "🐷 Caixinhas" },
+  { href: "/financas/projecoes", label: "🔭 Próximos meses" },
+];
+
 export function AbasFinancas({ ativo, mes }: { ativo: string; mes: string }) {
+  const noRealizado = REALIZADO.some((r) => r.href === ativo);
   return (
-    <Abas
-      ativo={ativo}
-      query={`?mes=${mes}`}
-      itens={[
-        { href: "/financas", label: "📊 Visão geral" },
-        { href: "/financas/lancamentos", label: "🧾 Lançamentos" },
-        { href: "/financas/contas-fixas", label: "📌 Contas fixas" },
-        { href: "/financas/orcamento", label: "🎯 Arquitetura" },
-        { href: "/financas/projecoes", label: "🔭 Projeções" },
-        { href: "/financas/cartoes", label: "💳 Cartões" },
-        { href: "/financas/vale", label: "🥗 Vale" },
-        { href: "/financas/caixinhas", label: "🐷 Caixinhas" },
-        { href: "/financas/importar", label: "📄 Importar extrato" },
-      ]}
-    />
+    <>
+      <Abas
+        ativo={noRealizado ? "/financas/realizado" : ativo}
+        query={`?mes=${mes}`}
+        itens={[
+          { href: "/financas", label: "📊 Visão geral" },
+          { href: "/financas/orcamento", label: "🎯 Orçado" },
+          { href: "/financas/realizado", label: "✅ Realizado" },
+          { href: "/financas/importar", label: "📄 Importar extrato" },
+        ]}
+      />
+      {noRealizado && (
+        <div className="-mt-2">
+          <Abas ativo={ativo} query={`?mes=${mes}`} itens={REALIZADO} />
+        </div>
+      )}
+    </>
   );
 }
 

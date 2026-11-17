@@ -204,7 +204,7 @@ function DetalheMes({ r, itens }: { r: Mes; itens: ItemProjecao[] }) {
   return (
     <Secao
       titulo={`${nomeMes(r.mes)} em detalhe`}
-      acao={<Link href={`/financas/lancamentos?mes=${r.mes}`} className="text-xs font-bold text-casa-principal">Ver lançamentos do mês →</Link>}
+      acao={<Link href={`/financas/realizado?mes=${r.mes}`} className="text-xs font-bold text-casa-principal">Ver lançamentos do mês →</Link>}
     >
       {previstos > 0 && (
         <p className="-mt-1 mb-3 text-xs text-casa-muted">

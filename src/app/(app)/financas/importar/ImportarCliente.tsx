@@ -181,7 +181,7 @@ export function ImportarCliente({
       {erroLeitura && <p className="rounded-xl bg-perigoclaro px-3 py-2 text-sm text-perigo">{erroLeitura}</p>}
       {concluido && (
         <p className="rounded-xl bg-okclaro px-3 py-2 text-sm font-semibold text-ok">
-          {concluido} <Link href={`/financas/lancamentos?mes=${meses[0] ?? ""}`} className="underline">Ver lançamentos →</Link>
+          {concluido} <Link href={`/financas/realizado?mes=${meses[0] ?? ""}`} className="underline">Ver lançamentos →</Link>
         </p>
       )}
 

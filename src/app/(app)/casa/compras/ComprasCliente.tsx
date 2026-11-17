@@ -117,7 +117,7 @@ export function ComprasCliente({ itens, sugestoes }: { itens: ItemCompra[]; suge
           {aviso && <p className="mt-3 rounded-xl bg-okclaro px-3 py-2 text-sm font-semibold text-ok">{aviso}</p>}
         </div>
         <div className="card p-4 text-sm text-casa-muted">
-          💡 Dica: lance o valor gasto no mercado em <Link href="/financas/lancamentos" className="font-bold text-casa-principal underline">Finanças</Link> na categoria Mercado (dá para pagar com o vale!).
+          💡 Dica: lance o valor gasto no mercado em <Link href="/financas/realizado" className="font-bold text-casa-principal underline">Finanças</Link> na categoria Mercado (dá para pagar com o vale!).
         </div>
       </aside>
     </div>

@@ -62,12 +62,19 @@ export function ImportarCliente({
         // planilha: lida aqui mesmo no navegador
         const { lerPlanilha } = await import("@/lib/planilha");
         json = { ...lerPlanilha(await arquivo.arrayBuffer()), metodo: "planilha" };
+      } else if (!temIA && /\.pdf$/i.test(arquivo.name)) {
+        // sem IA, o PDF com texto é lido aqui mesmo no navegador
+        const { lerComTexto } = await import("@/lib/extratoTexto");
+        json = { transacoes: await lerComTexto(new Uint8Array(await arquivo.arrayBuffer())), metodo: "texto" };
       } else {
         const fd = new FormData();
         fd.append("arquivo", arquivo);
         const resp = await fetch("/api/extrato", { method: "POST", body: fd });
-        json = await resp.json();
-        if (!resp.ok) throw new Error((json as unknown as { erro?: string }).erro ?? "Falha ao ler o arquivo.");
+        const corpo = await resp.text();
+        let dados: { erro?: string } | null = null;
+        try { dados = JSON.parse(corpo); } catch { /* resposta não é JSON (erro do servidor) */ }
+        if (!resp.ok || !dados) throw new Error(dados?.erro ?? `Falha ao ler o arquivo (erro ${resp.status} no servidor).`);
+        json = dados as typeof json;
       }
       let lidas = json.transacoes;
       // na fatura, compras vêm positivas (seriam lidas como entrada): inverte
